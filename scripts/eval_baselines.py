@@ -33,7 +33,7 @@ from _smoke_common import load_env
 from contains.labels import ALLERGENS
 from contains.metrics import format_report, score
 from contains.prompt import build_prompt, parse_response
-from contains.rules import detect
+from contains.rules import detect_naive
 
 ROOT = Path(__file__).resolve().parent.parent
 DEV = ROOT / "data" / "splits" / "dev.jsonl"
@@ -55,10 +55,11 @@ def load_dev(subset: bool) -> list[dict]:
 
 
 def run_rules(rows):
+    # BASELINE uses rules_naive only (direct names); rules_product is never a baseline.
     preds, lat = [], []
     for r in rows:
         t0 = time.perf_counter()
-        hits = set(detect(r["ingredients_text"]))
+        hits = set(detect_naive(r["ingredients_text"]))
         lat.append((time.perf_counter() - t0) * 1000)
         preds.append({a: ("yes" if a in hits else "no") for a in ALLERGENS})
     return preds, lat, {"in_tok": 0, "out_tok": 0}
@@ -149,7 +150,8 @@ def main() -> int:
         "\n".join(json.dumps({"id": r["code"], "gold": sorted(g), "pred": p})
                   for r, g, p in zip(rows, golds, preds)), encoding="utf-8")
 
-    title = f"{args.backend} [{scope}]"
+    label = "rules_naive (BASELINE)" if args.backend == "rules" else args.backend
+    title = f"{label} [{scope}]"
     report = format_report(title, res, extra)
     print(report)
     with RESULTS.open("a", encoding="utf-8") as fh:

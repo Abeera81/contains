@@ -18,7 +18,7 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from contains.rules import detect
+from contains.rules import detect_product as detect
 
 TRAIN = Path(__file__).resolve().parent.parent / "data" / "splits" / "train.jsonl"
 
