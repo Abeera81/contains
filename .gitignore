@@ -1,6 +1,7 @@
 .env
 .venv/
 __pycache__/
+data/
 data/raw/
 runs/
 *.gguf
