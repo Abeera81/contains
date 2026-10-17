@@ -146,3 +146,29 @@ def derive_labels(allergens_tags, ingredients_text: str) -> list[str]:
         elif tag == "en:gluten" and any(term in low for term in GLUTEN_WHEAT_TERMS):
             present.add("wheat")
     return [a for a in ALLERGENS if a in present]
+
+
+def strip_declarations(text: str) -> str:
+    """Remove embedded allergen statements ('Contains: wheat.', 'May contain nuts.',
+    'Allergy advice: ...') from the INPUT side of a training example, keeping the rest
+    of the ingredient list. A statement inside parentheses is cut only to its closing
+    paren; otherwise it is cut to the end of its sentence ('.' or end of text).
+    """
+    t = text or ""
+    for _ in range(20):  # a text can carry several statements
+        m = _DECLARATION.search(t)
+        if not m:
+            break
+        s = m.start()
+        depth = t.count("(", 0, s) - t.count(")", 0, s)
+        if depth > 0:
+            e = s
+            while e < len(t) and depth > 0:
+                depth += (t[e] == "(") - (t[e] == ")")
+                e += 1
+            e = max(e - 1, s + 1)  # keep the closing paren
+        else:
+            e = t.find(".", m.end())
+            e = len(t) if e == -1 else e + 1
+        t = _WS.sub(" ", t[:s] + " " + t[e:]).strip(" ,;")
+    return t

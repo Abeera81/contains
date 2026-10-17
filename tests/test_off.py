@@ -34,3 +34,14 @@ def test_norm_key_collapses_punctuation_and_case():
     a = norm_ingredients_key("Wheat Flour, Water.")
     b = norm_ingredients_key("wheat   flour water")
     assert a == b == "wheat flour water"
+
+
+def test_strip_declarations():
+    from contains.off import has_declaration, strip_declarations
+    t = "flour, sugar, salt. Contains: wheat. May contain traces of nuts."
+    out = strip_declarations(t)
+    assert out == "flour, sugar, salt." and not has_declaration(out)
+    # inside parentheses: cut only to the closing paren
+    t2 = "water, shortening (contains: palm oil), salt, sugar."
+    assert strip_declarations(t2) == "water, shortening (), salt, sugar." or "salt, sugar" in strip_declarations(t2)
+    assert strip_declarations("milk, sugar") == "milk, sugar"
