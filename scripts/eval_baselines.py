@@ -139,24 +139,37 @@ def main() -> int:
     preds, lat, toks = runner()
     wall = time.time() - t0
 
-    res = score(golds, preds)
     lat_sorted = sorted(lat)
     p50 = lat_sorted[len(lat_sorted) // 2] if lat_sorted else 0.0
+
+    # $ per 1k labels (rows): paid models only; prefill+sample token prices per 1M.
+    price = {"qwen": (0.33, 1.005), "gptoss": (0.33, 0.84)}.get(args.backend)
+    cost_str = "n/a (free)"
+    if price:
+        pre, samp = price
+        usd = (toks["in_tok"] * pre + toks["out_tok"] * samp) / 1e6
+        cost_str = f"${usd / len(rows) * 1000:.3f}  (total ${usd:.4f})"
     extra = {"p50_latency_ms": f"{p50:.1f}", "wall_s": f"{wall:.1f}",
-             "in_tok": toks["in_tok"], "out_tok": toks["out_tok"]}
+             "in_tok": toks["in_tok"], "out_tok": toks["out_tok"], "usd_per_1k": cost_str}
 
     EVAL_DIR.mkdir(parents=True, exist_ok=True)
     (EVAL_DIR / f"{args.backend}_{scope}.jsonl").write_text(
-        "\n".join(json.dumps({"id": r["code"], "gold": sorted(g), "pred": p})
+        "\n".join(json.dumps({"id": r["code"], "gold": sorted(g), "pred": p,
+                              "has_declaration": r.get("has_declaration", False)})
                   for r, g, p in zip(rows, golds, preds)), encoding="utf-8")
 
     label = "rules_naive (BASELINE)" if args.backend == "rules" else args.backend
-    title = f"{label} [{scope}]"
-    report = format_report(title, res, extra)
-    print(report)
+    und = [i for i, r in enumerate(rows) if not r.get("has_declaration", False)]
+    res_all = score(golds, preds)
+    res_und = score([golds[i] for i in und], [preds[i] for i in und])
+    rep_all = format_report(f"{label} [{scope}] ALL ROWS", res_all, extra)
+    rep_und = format_report(f"{label} [{scope}] UNDECLARED ONLY (honest)", res_und,
+                            {"p50_latency_ms": f"{p50:.1f}"})
+    print(rep_all)
+    print(rep_und)
     with RESULTS.open("a", encoding="utf-8") as fh:
         fh.write(f"\n#### cmd: `uv run python scripts/eval_baselines.py {args.backend} "
-                 f"{'--subset' if subset else '--full'}`\n{report}\n")
+                 f"{'--subset' if subset else '--full'}`\n{rep_all}\n\n{rep_und}\n")
     return 0
 
 

@@ -65,7 +65,17 @@ def en_text(struct_list) -> str:
         elif lang in ("", "main", "xx"):
             other.append(text)
     chosen = en or other
-    return " ".join(chosen).strip()
+    # OFF often stores the SAME text twice (an HTML-highlighted copy + a plain copy);
+    # after clean_text they are identical, which would double the ingredient line.
+    # Dedupe pieces by normalized key, preserving order.
+    seen: set[str] = set()
+    unique: list[str] = []
+    for piece in chosen:
+        key = norm_ingredients_key(piece)
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(piece)
+    return " ".join(unique).strip()
 
 
 def norm_ingredients_key(text: str) -> str:
@@ -74,6 +84,52 @@ def norm_ingredients_key(text: str) -> str:
     t = _PUNCT.sub(" ", t)
     t = _WS.sub(" ", t)
     return t.strip()
+
+
+# Explicit allergen declarations a manufacturer appends to the ingredient list.
+# Their presence means the answer is written in the input, so such rows are trivially
+# solvable and inflate every system's score. Case-insensitive.
+_DECLARATION = re.compile(
+    r"(?i)("
+    r"contains\s*:"                                   # 'Contains: wheat'
+    r"|may\s+(?:also\s+)?contain"                      # 'may contain nuts'
+    r"|allergy\s+advice"
+    r"|allergens?\s*:"                                 # 'Allergens: milk'
+    r"|allergen\s+information"
+    r"|produced\s+in\s+a\s+facility"
+    r"|made\s+(?:in|on)\s+(?:a\s+)?(?:shared\s+)?(?:facility|equipment|line)"
+    r"|contains\s+(?:tree\s+nuts?|milk|eggs?|fish|shellfish|crustaceans?|peanuts?"
+    r"|wheat|soya?|sesame|gluten|nuts?)\b"             # 'contains wheat' (no colon)
+    r")"
+)
+
+
+def has_declaration(text: str) -> bool:
+    """True if the ingredient text embeds an explicit allergen statement (answer leakage)."""
+    return bool(_DECLARATION.search(text or ""))
+
+
+def collapse_doubling(text: str) -> str:
+    """Collapse an exactly-doubled ingredient line ('A. A.') back to one copy.
+
+    OFF stored duplicate STRUCT entries; the first build joined them. This detects a
+    line whose two halves are identical after normalization (ignoring punctuation-only
+    tokens left by HTML stripping) and returns just the first half. Non-doubled text is
+    returned unchanged. The real fix is in en_text(); this repairs already-built files.
+    """
+    if not text:
+        return text
+    toks = text.split()
+    norms = [norm_ingredients_key(t) for t in toks]
+    kept = [(i, n) for i, n in enumerate(norms) if n]
+    nn = [n for _, n in kept]
+    if len(nn) < 2 or len(nn) % 2 != 0:
+        return text
+    h = len(nn) // 2
+    if nn[:h] != nn[h:]:
+        return text
+    cut = kept[h][0]  # original-token index where the second copy begins
+    return " ".join(toks[:cut]).strip()
 
 
 def derive_labels(allergens_tags, ingredients_text: str) -> list[str]:
