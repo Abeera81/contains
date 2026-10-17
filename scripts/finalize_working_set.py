@@ -12,7 +12,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-from contains.off import clean_text, collapse_doubling, derive_labels, has_declaration, norm_ingredients_key
+from contains.off import (
+    clean_text,
+    collapse_doubling,
+    derive_labels,
+    has_declaration,
+    norm_ingredients_key,
+)
 
 SRC = Path(__file__).resolve().parent.parent / "data" / "raw" / "off_working.parquet"
 

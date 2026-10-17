@@ -45,3 +45,14 @@ def test_strip_declarations():
     t2 = "water, shortening (contains: palm oil), salt, sugar."
     assert strip_declarations(t2) == "water, shortening (), salt, sugar." or "salt, sugar" in strip_declarations(t2)
     assert strip_declarations("milk, sugar") == "milk, sugar"
+
+
+def test_composition_contains_is_not_a_declaration():
+    from contains.off import has_declaration, strip_declarations
+    comp = "sugar, palm oil, milk chocolate contains: cocoa solids 30% min, milk solids 14% min."
+    assert not has_declaration(comp) and strip_declarations(comp) == comp
+    assert not has_declaration("vegetable shortening (contains one or more of the following: palm oil)")
+    assert has_declaration("flour, water. Contains: wheat, milk.")
+    assert has_declaration("sugar. contains wheat")
+    assert has_declaration("sugar, may contain traces of nuts")
+    assert strip_declarations("sugar, shortening (contains: soy), salt.") == "sugar, shortening, salt."

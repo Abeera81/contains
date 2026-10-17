@@ -89,24 +89,59 @@ def norm_ingredients_key(text: str) -> str:
 # Explicit allergen declarations a manufacturer appends to the ingredient list.
 # Their presence means the answer is written in the input, so such rows are trivially
 # solvable and inflate every system's score. Case-insensitive.
-_DECLARATION = re.compile(
+#
+# Two tiers. ALWAYS phrases are allergy phrasing on their own. CONTAINS phrases are only
+# declarations when the clause that follows names an allergen: "contains: cocoa solids 30%
+# min, milk solids 14% min" is a composition statement, not an allergen declaration.
+_ALWAYS = re.compile(
     r"(?i)("
-    r"contains\s*:"                                   # 'Contains: wheat'
-    r"|may\s+(?:also\s+)?contain"                      # 'may contain nuts'
+    r"may\s+(?:also\s+)?contain"                      # 'may contain nuts'
     r"|allergy\s+advice"
     r"|allergens?\s*:"                                 # 'Allergens: milk'
     r"|allergen\s+information"
     r"|produced\s+in\s+a\s+facility"
     r"|made\s+(?:in|on)\s+(?:a\s+)?(?:shared\s+)?(?:facility|equipment|line)"
-    r"|contains\s+(?:tree\s+nuts?|milk|eggs?|fish|shellfish|crustaceans?|peanuts?"
-    r"|wheat|soya?|sesame|gluten|nuts?)\b"             # 'contains wheat' (no colon)
     r")"
 )
+_CONTAINS = re.compile(r"(?i)contains\s*:?\s*")
+_ALLERGEN_WORD = re.compile(
+    r"(?i)\b(?:milk|dairy|eggs?|fish|shellfish|crustaceans?|shrimp|prawns?|crab|lobster|nuts?|"
+    r"tree\s+nuts?|almonds?|hazelnuts?|walnuts?|cashews?|pecans?|pistachios?|peanuts?|wheat|"
+    r"gluten|soya?|soybeans?|sesame|barley|rye|sulphites?|sulfites?|celery|mustard|lupin|molluscs?)\b"
+)
+
+
+def _contains_is_declaration(text: str, m: re.Match) -> bool:
+    """A 'contains' hit is an allergen declaration iff it is 'contains:' / 'contains <allergen>'
+    and the clause up to the end of the sentence names an allergen with no % / 'solids'."""
+    clause = re.split(r"[.;)]", text[m.end(): m.end() + 120])[0]
+    colon = ":" in m.group(0)
+    if "%" in clause or re.search(r"(?i)solids|one or more|following|or less", clause):
+        return False
+    first = _ALLERGEN_WORD.match(clause.lstrip())
+    if colon:
+        return bool(_ALLERGEN_WORD.search(clause))
+    return bool(first)  # 'contains wheat' without a colon: allergen must come right after
+
+
+def _find_declaration(text: str, pos: int = 0):
+    """Earliest allergen declaration at/after pos as a (start, end_of_match) pair, or None."""
+    best = None
+    m = _ALWAYS.search(text, pos)
+    if m:
+        best = (m.start(), m.end())
+    for m in _CONTAINS.finditer(text, pos):
+        if best and m.start() >= best[0]:
+            break
+        if _contains_is_declaration(text, m):
+            best = (m.start(), m.end())
+            break
+    return best
 
 
 def has_declaration(text: str) -> bool:
     """True if the ingredient text embeds an explicit allergen statement (answer leakage)."""
-    return bool(_DECLARATION.search(text or ""))
+    return _find_declaration(text or "") is not None
 
 
 def collapse_doubling(text: str) -> str:
@@ -153,13 +188,14 @@ def strip_declarations(text: str) -> str:
     'Allergy advice: ...') from the INPUT side of a training example, keeping the rest
     of the ingredient list. A statement inside parentheses is cut only to its closing
     paren; otherwise it is cut to the end of its sentence ('.' or end of text).
+    Leftover empty parentheses and stray separators are tidied.
     """
     t = text or ""
     for _ in range(20):  # a text can carry several statements
-        m = _DECLARATION.search(t)
-        if not m:
+        hit = _find_declaration(t)
+        if not hit:
             break
-        s = m.start()
+        s, mend = hit
         depth = t.count("(", 0, s) - t.count(")", 0, s)
         if depth > 0:
             e = s
@@ -168,7 +204,11 @@ def strip_declarations(text: str) -> str:
                 e += 1
             e = max(e - 1, s + 1)  # keep the closing paren
         else:
-            e = t.find(".", m.end())
+            e = t.find(".", mend)
             e = len(t) if e == -1 else e + 1
-        t = _WS.sub(" ", t[:s] + " " + t[e:]).strip(" ,;")
+        t = t[:s] + " " + t[e:]
+        t = re.sub(r"\(\s*\)", " ", t)
+        t = re.sub(r"\s+([,;.])", r"\1", t)
+        t = re.sub(r"([,;])\s*(?=[,;.])", "", t)
+        t = _WS.sub(" ", t).strip(" ,;")
     return t

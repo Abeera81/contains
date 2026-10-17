@@ -20,11 +20,7 @@ from pathlib import Path
 SRC = Path(__file__).resolve().parent.parent / "data" / "raw" / "off_working.parquet"
 THRESH = 0.9
 MIN_LEN = 30  # langdetect is unreliable on very short strings; those are judged by vocab only
-_ENG = set(("water sugar salt milk flour oil and with contains less than natural flavor flavors "
-            "extract powder starch syrup acid vitamin vitamins corn wheat soy butter cream cheese "
-            "egg eggs cocoa spices spice yeast juice concentrate color preservative sodium calcium "
-            "organic whole grain rice oats potato tomato garlic onion vegetable palm sunflower of "
-            "or the may contain from added modified artificial sweetener lecithin citric").split())
+_ENG = set(["water", "sugar", "salt", "milk", "flour", "oil", "and", "with", "contains", "less", "than", "natural", "flavor", "flavors", "extract", "powder", "starch", "syrup", "acid", "vitamin", "vitamins", "corn", "wheat", "soy", "butter", "cream", "cheese", "egg", "eggs", "cocoa", "spices", "spice", "yeast", "juice", "concentrate", "color", "preservative", "sodium", "calcium", "organic", "whole", "grain", "rice", "oats", "potato", "tomato", "garlic", "onion", "vegetable", "palm", "sunflower", "of", "or", "the", "may", "contain", "from", "added", "modified", "artificial", "sweetener", "lecithin", "citric"])
 
 
 def eng_hits(text: str) -> int:
