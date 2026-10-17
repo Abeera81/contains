@@ -13,3 +13,9 @@ PLAN.md
 REVIEW-CHECKLIST.md
 AGENTS.md
 CLAUDE.md
+.venv*/
+scratch/
+data/processed/
+*.png
+!static/**/*.png
+.claude/
