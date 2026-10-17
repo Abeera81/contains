@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+data/raw/
+runs/
+*.gguf
+*.parquet
+.DS_Store
+docs/
+agent_docs/
+MEMORY.md
+PLAN.md
+REVIEW-CHECKLIST.md
+AGENTS.md
+CLAUDE.md
