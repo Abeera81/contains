@@ -43,6 +43,14 @@ SUBSET_N = 300
 SUBSET_SEED = 300
 MAX_TOKENS = 64
 
+# Qwen3.5 defaults to thinking mode, which burns the 64-token budget on "Thinking Process:"
+# and yields 100% unparseable output. Non-thinking = direct answer, matching the fine-tune.
+TEMPLATE_KW = {"qwen": {"enable_thinking": False}, "gptoss": {"reasoning_effort": "low"}}
+# gpt-oss (harmony format) reasons in an analysis channel before the answer; it needs a
+# larger token budget, and only the `final` channel is parsed.
+MAX_TOKENS_BY = {"gptoss": 512}
+_FINAL = "<|channel|>final<|message|>"
+
 MODEL_IDS = {"qwen": "Qwen/Qwen3.5-4B", "gptoss": "openai/gpt-oss-120b"}
 
 
@@ -96,13 +104,13 @@ def run_tinker(rows, model_key):
     sc = service_client()
     sampling = sc.create_sampling_client(base_model=MODEL_IDS[model_key])
     tok = sampling.get_tokenizer()
-    params = tinker.SamplingParams(max_tokens=MAX_TOKENS, temperature=0.0)
+    params = tinker.SamplingParams(max_tokens=MAX_TOKENS_BY.get(model_key, MAX_TOKENS), temperature=0.0)
     preds, lat = [], []
     in_tok = out_tok = 0
     for i, r in enumerate(rows, 1):
         text = tok.apply_chat_template(
             [{"role": "user", "content": build_prompt(r["ingredients_text"])}],
-            tokenize=False, add_generation_prompt=True)
+            tokenize=False, add_generation_prompt=True, **TEMPLATE_KW.get(model_key, {}))
         ids = tok.encode(text, add_special_tokens=False)
         t0 = time.perf_counter()
         resp = sampling.sample(prompt=tinker.ModelInput.from_ints(ids), num_samples=1,
@@ -111,7 +119,12 @@ def run_tinker(rows, model_key):
         out_ids = list(resp.sequences[0].tokens)
         in_tok += len(ids)
         out_tok += len(out_ids)
-        pred, _ = parse_response(tok.decode(out_ids))
+        raw = tok.decode(out_ids)
+        if _FINAL in raw:
+            raw = raw.split(_FINAL, 1)[1]
+        elif model_key == "gptoss":
+            raw = ""  # never reached the final channel -> unparseable -> all-unsure
+        pred, _ = parse_response(raw)
         preds.append(pred)
         if i % 50 == 0:
             print(f"  {model_key} {i}/{len(rows)}")
