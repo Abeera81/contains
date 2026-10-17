@@ -67,12 +67,21 @@ def main() -> int:
     # greedily filled into test, then dev, until each hits its row target.
     total = len(rows)
     dev_target, test_target = int(total * DEV_FRAC), int(total * TEST_FRAC)
-    brands = [b for b in by_brand if b != NOBRAND]
+    # Human-verified gold rows must stay in test across rebuilds: pin their brands there.
+    gold_path = Path(__file__).resolve().parent.parent / "data" / "verified" / "test_gold.jsonl"
+    pinned: set[str] = set()
+    if gold_path.exists():
+        gold_ids = {json.loads(ln)["id"] for ln in gold_path.read_text(encoding="utf-8").splitlines() if ln.strip()}
+        pinned = {brand_key(r["brands"]) for r in rows if r["code"] in gold_ids} - {NOBRAND}
+        print(f"Pinned {len(pinned)} gold-row brands to test ({len(gold_ids)} verified gold ids).")
+    brands = [b for b in by_brand if b != NOBRAND and b not in pinned]
     rng = random.Random(SEED)
     rng.shuffle(brands)
 
     split_of: dict[str, str] = {NOBRAND: "train"}
     dev_n = test_n = 0
+    for b in pinned:
+        split_of[b] = "test"; test_n += len(by_brand[b])
     for b in brands:
         n = len(by_brand[b])
         if test_n < test_target:
