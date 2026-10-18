@@ -1,0 +1,25 @@
+# Render Blueprint: free web service from the GitHub repo. Secrets (sync: false) are set in the dashboard.
+services:
+  - type: web
+    name: contains
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: .venv/bin/uvicorn contains.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: SAMPLER
+        value: tinker_lora
+      - key: TINKER_BASE_MODEL
+        value: Qwen/Qwen3.5-4B
+      - key: PHOTO_ENABLED   # no Ollama / not enough RAM for gemma3:4b on the free tier
+        value: "0"
+      - key: TINKER_API_KEY
+        sync: false
+      - key: LORA_SAMPLER_PATH
+        sync: false
