@@ -6,7 +6,10 @@ services:
     plan: free
     region: oregon
     branch: main
-    buildCommand: pip install uv && uv sync --frozen --no-dev
+    # The tokenizer is downloaded here (build has network) into HF_HOME inside the project dir, which persists to
+    # runtime, so the cold wake path does not touch the Hugging Face hub. The script fails the build if the cache
+    # cannot be reloaded offline.
+    buildCommand: pip install uv && uv sync --frozen --no-dev && .venv/bin/python scripts/prefetch_tokenizer.py
     startCommand: .venv/bin/uvicorn contains.app:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /healthz
     autoDeploy: true
@@ -19,6 +22,10 @@ services:
         value: Qwen/Qwen3.5-4B
       - key: PHOTO_ENABLED   # no Ollama / not enough RAM for gemma3:4b on the free tier
         value: "0"
+      - key: HF_HOME         # baked tokenizer cache, inside the project dir so it persists from build to runtime
+        value: /opt/render/project/src/.hf_cache
+      - key: CONTAINS_HF_OFFLINE   # runtime only (read by the app, not the build): disable the HF hub on the wake path
+        value: "1"
       - key: TINKER_API_KEY
         sync: false
       - key: LORA_SAMPLER_PATH

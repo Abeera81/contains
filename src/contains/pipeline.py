@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import time
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
@@ -27,7 +28,8 @@ log = logging.getLogger("contains")
 STATS = {"unsure_downgraded": 0}
 
 MAX_CHARS = 6000
-MODEL_TIMEOUT_S = 25.0
+MODEL_TIMEOUT_S = 25.0   # warm sampler: a slow call this long is a real problem
+COLD_TIMEOUT_S = 120.0   # first call after a wake: wait for client + tokenizer warm-up instead of degrading
 
 # matched word (singular, lowercase) -> FDA-style species name. Only terms whose DEFINITION fixes the
 # species are listed; anything else matched (generic "fish", pesto, praline, nougat, surimi, fish
@@ -80,7 +82,14 @@ _cache = _Cache()
 _pool = ThreadPoolExecutor(max_workers=4)
 
 
-def _model_verdicts(text: str, sampler, timeout: float) -> tuple[dict | None, str | None]:
+def _scrub(msg: str, text: str) -> str:
+    """Error text for the log: never the ingredient text, bounded length."""
+    if text and text in msg:
+        msg = msg.replace(text, "<input>")
+    return msg.replace(chr(10), ' ')[:400]
+
+
+def _model_verdicts(text: str, sampler, timeout: float | None) -> tuple[dict | None, str | None]:
     """Return (verdicts, None) or (None, reason). Never raises."""
     if sampler is None or getattr(sampler, "name", "") == "rules_only":
         return None, None  # intentional rules-only: not a failure, no banner
@@ -88,20 +97,29 @@ def _model_verdicts(text: str, sampler, timeout: float) -> tuple[dict | None, st
     hit = _cache.get(key)
     if hit is not None:
         return hit, None
+    cold = getattr(sampler, "ready", True) is False
+    if timeout is None:
+        timeout = COLD_TIMEOUT_S if cold else MODEL_TIMEOUT_S
+
     def work():
         v = sampler.verdicts(text)
         _cache.put(key, v)  # a late result is still kept, so a retry is instant and costs nothing
         return v
 
+    t0 = time.monotonic()
     try:
-        return _pool.submit(work).result(timeout=timeout), None
+        v = _pool.submit(work).result(timeout=timeout)
+        log.info("model call ok in %.1fs (%s)", time.monotonic() - t0, "cold: waited for warm-up" if cold else "warm")
+        return v, None
     except FutureTimeout:
+        log.warning("model layer FAILED -> rules-only: timed out after %.0fs (%s)", timeout, "cold" if cold else "warm")
         return None, "timed out"
     except Exception as e:  # noqa: BLE001 - any sampler failure must degrade to rules-only
+        log.warning("model layer FAILED -> rules-only: %s: %s", type(e).__name__, _scrub(str(e), text))
         return None, type(e).__name__
 
 
-def analyze(text: str, sampler, timeout: float = MODEL_TIMEOUT_S) -> dict:
+def analyze(text: str, sampler, timeout: float | None = None) -> dict:
     text = (text or "").strip()
     truncated = len(text) > MAX_CHARS
     text = text[:MAX_CHARS]

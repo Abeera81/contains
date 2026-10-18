@@ -102,6 +102,8 @@ details.a[open] .chev{transform:rotate(180deg)}
 .none .chip{background:var(--panel);border-color:transparent;color:var(--muted);font-size:.84rem;padding:3px 14px}
 .disclaimer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -1px 3px rgba(31,41,55,.06);padding:12px 20px;font-size:.85rem;z-index:5}
 .disclaimer div{max-width:660px;margin:0 auto}
+[hidden]{display:none!important}
+.warm{margin-top:14px;padding:12px 16px;border:1px solid var(--ban-line);background:var(--ban-bg);color:var(--amb-ink);border-radius:12px;font-size:.92rem}
 .foot{color:var(--muted);font-size:.8rem;margin-top:24px}
 @media (max-width:480px){
   .wrap{padding-left:16px;padding-right:16px}
@@ -130,6 +132,7 @@ details.a[open] .chev{transform:rotate(180deg)}
     <label class="btn" for="photo">Upload a label photo</label>
     <input type="file" id="photo" accept="image/*">
   </div>
+  <div id="warm" class="warm" role="status" hidden><b>Waking the model</b> — this can take up to a minute on the free instance. Your check will wait for it; nothing is wrong.</div>
   <div id="status" class="hint" role="status" style="margin-top:12px"></div>
   <div id="out"></div>
   <p class="foot" id="foot"></p>
@@ -264,19 +267,35 @@ function fitDisclaimer() {
 fitDisclaimer(); addEventListener("resize", fitDisclaimer);
 if (window.ResizeObserver) new ResizeObserver(fitDisclaimer).observe(document.querySelector(".disclaimer"));
 
+// Free-instance wake-up: show a warming state instead of a silent hang or a quiet downgrade to rules-only.
+function setWarming(on) { $("warm").hidden = !on; }
+async function pollModel() {
+  for (let i = 0; i < 60; i++) {
+    let h = null;
+    try { h = await (await fetch("/healthz")).json(); } catch (e) {}
+    if (h && h.model !== "warming" && h.model !== "cold") { setWarming(false); return; }
+    setWarming(true);
+    await new Promise(r => setTimeout(r, 3000));
+  }
+  setWarming(false);
+}
+
 async function post(url, body, headers) {
   const res = await fetch(url, { method: "POST", body, headers });
   return res.json();
 }
 async function run(fn, msg) {
   $("go").disabled = true; $("status").textContent = msg;
+  const slow = setTimeout(() => setWarming(true), 4000);  // a long wait is almost always the free instance waking the model
   try { render(await fn()); $("status").textContent = ""; }
   catch (e) { $("status").textContent = ""; render({ empty: true, banner: "Couldn’t reach the server. Check your connection and try again.", allergens: [], notes: [] }); }
+  clearTimeout(slow); setWarming(false);
   $("go").disabled = false;
 }
 $("go").onclick = () => run(() => post("/api/label", JSON.stringify({ text: ($("ocrtext") || $("text")).value }), { "Content-Type": "application/json" }), "Checking…");
 // Photo reading is local-only: if the server can't reach Ollama, say so instead of showing a broken upload.
 fetch("/healthz").then(r => r.json()).then(h => {
+  if (h.model === "warming" || h.model === "cold") pollModel();
   if (h.photo === false) {
     const lab = document.querySelector('label[for="photo"]');
     const note = el("span", "hint", "Photo reading is local-only (needs Gemma on your computer). ");

@@ -144,3 +144,93 @@ def test_photo_unavailable_returns_local_only_message_not_error(monkeypatch):
     assert "local-only" in j.json()["ocr_error"] and "README" in j.json()["ocr_error"]
     ocr._avail["t"] = 0.0
     assert c.get("/healthz").json()["photo"] is False
+
+
+class ColdFake(Fake):
+    """A sampler whose client is still warming: ready is False, the call takes a while but succeeds."""
+    ready = False
+
+
+def test_cold_sampler_waits_for_warmup_instead_of_falling_back(monkeypatch):
+    from contains import pipeline
+    monkeypatch.setattr(pipeline, "MODEL_TIMEOUT_S", 0.1)   # a warm sampler would have timed out here
+    monkeypatch.setattr(pipeline, "COLD_TIMEOUT_S", 3.0)
+    r = analyze("cold start recipe one, butter", ColdFake({"soy": "unsure"}, delay=0.4, name="cold"))
+    assert r["banner"] is None and r["sampler"] == "cold"
+
+
+def test_warm_sampler_that_hangs_still_falls_back(monkeypatch):
+    from contains import pipeline
+    monkeypatch.setattr(pipeline, "MODEL_TIMEOUT_S", 0.1)
+    r = analyze("warm hang recipe, butter", Fake(delay=0.5, name="warm"))
+    assert r["banner"] and r["sampler"] == "rules_only"
+
+
+def test_failure_reason_is_logged_without_the_ingredient_text(caplog):
+    import logging
+    text = "secret grandma recipe, butter"
+    with caplog.at_level(logging.WARNING, logger="contains"):
+        r = analyze(text, Fake(exc=RuntimeError("quota exceeded while sampling: " + text), name="boom"))
+    assert r["banner"]
+    logged = " ".join(rec.getMessage() for rec in caplog.records)
+    assert "RuntimeError" in logged and "quota exceeded" in logged and "<input>" in logged
+    assert "grandma" not in logged
+
+
+def test_timeout_is_logged_with_its_reason(caplog):
+    import logging
+    with caplog.at_level(logging.WARNING, logger="contains"):
+        analyze("timeout log recipe, butter", Fake(delay=0.5, name="slow"), timeout=0.1)
+    assert any("timed out" in rec.getMessage() for rec in caplog.records)
+
+
+def test_healthz_reports_model_state():
+    class S(Fake):
+        state = "warming"
+    appmod.app.state.sampler = S()
+    c = TestClient(appmod.app)
+    assert c.get("/healthz").json()["model"] == "warming"
+    appmod.app.state.sampler = Fake()
+    assert c.get("/healthz").json()["model"] == "n/a"
+
+
+def test_tinker_sampler_states_and_single_client_build(monkeypatch):
+    import sys, types, threading, time as _t
+    from contains.sampler import TinkerSampler
+    built = []
+
+    class Client:
+        def get_tokenizer(self):
+            _t.sleep(0.2)
+            return object()
+
+    class SC:
+        def create_sampling_client(self, **kw):
+            built.append(1)
+            return Client()
+
+    fake = types.SimpleNamespace(ServiceClient=lambda: SC())
+    monkeypatch.setitem(sys.modules, "tinker", fake)
+    s = TinkerSampler("t", model_path="tinker://x", base_model="m")
+    assert s.state == "cold" and s.ready is False
+    ts = [threading.Thread(target=s.warm) for _ in range(3)]  # warm-up thread + early requests race
+    [t.start() for t in ts]; [t.join() for t in ts]
+    assert s.ready and s.state == "ready" and len(built) == 1
+
+
+def test_tinker_sampler_failed_state(monkeypatch):
+    import sys, types
+    from contains.sampler import TinkerSampler
+
+    class SC:
+        def create_sampling_client(self, **kw):
+            raise ConnectionError("tinker unreachable")
+
+    monkeypatch.setitem(sys.modules, "tinker", types.SimpleNamespace(ServiceClient=lambda: SC()))
+    s = TinkerSampler("t", model_path="tinker://x", base_model="m")
+    try:
+        s.warm()
+        assert False
+    except ConnectionError:
+        pass
+    assert s.state == "failed" and s.ready is False

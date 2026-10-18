@@ -39,17 +39,35 @@ class _Misconfigured:
 
 class TinkerSampler:
     def __init__(self, name: str, model_path: str | None = None, base_model: str | None = None):
+        import threading
         self.name, self._path, self._base = name, model_path, base_model
         self._client = self._tok = None
+        self._lock = threading.Lock()  # the warm-up thread and the first request share ONE client build
+        self.state = "cold"            # cold -> warming -> ready | failed
+
+    @property
+    def ready(self) -> bool:
+        return self._client is not None and self._tok is not None
 
     def _ensure(self):
-        if self._client is None:
-            from dotenv import load_dotenv
-            load_dotenv()
-            import tinker
-            sc = tinker.ServiceClient()
-            self._client = sc.create_sampling_client(model_path=self._path, base_model=self._base)
-            self._tok = self._client.get_tokenizer()
+        if self.ready:
+            return
+        with self._lock:
+            if self.ready:
+                return
+            self.state = "warming"
+            try:
+                from dotenv import load_dotenv
+                load_dotenv()
+                import tinker
+                sc = tinker.ServiceClient()
+                client = sc.create_sampling_client(model_path=self._path, base_model=self._base)
+                self._tok = client.get_tokenizer()
+                self._client = client
+                self.state = "ready"
+            except Exception:
+                self.state = "failed"
+                raise
 
     def warm(self):
         """Create the sampling client now (no sample call, no token cost)."""
