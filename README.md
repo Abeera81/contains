@@ -4,6 +4,8 @@ A ~$2 fine-tuned open model (Qwen3.5-4B + Tinker LoRA) plus a rules layer that f
 allergens hidden inside compound ingredients and prints a US-style **"Contains:"** line for
 the 9 US major allergens. Runs offline on the baker's laptop, so the recipe never leaves it.
 
+Write-up: [Contains: I built an allergen checker for home bakers that says "I'm not sure" instead of guessing](https://dev.to/abeera_lodhi/contains-i-built-an-allergen-checker-for-home-bakers-that-says-im-not-sure-instead-of-guessing-29g8) (DEV).
+
 > **Draft, not certification.** Output is a draft a human must verify with their suppliers.
 > Scope is the 9 US major allergens (FALCPA + FASTER Act). Not EU rules, not cross-contact,
 > not nutrition, not legal certification.
