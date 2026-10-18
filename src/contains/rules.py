@@ -68,7 +68,10 @@ _PRODUCT_EXTRA: dict[str, tuple[str, ...]] = {
     "crustacean_shellfish": (),
     "tree_nuts": ("praline", "marzipan", "frangipane", "gianduja", "pesto", "nougat"),
     "peanuts": ("satay",),
-    "wheat": ("wheat flour", "seitan", "graham", "breadcrumb", "breadcrumbs", "panko",
+    "wheat": ("wheat flour", "all-purpose flour", "all purpose flour", "plain flour", "bread flour",
+              "cake flour", "pastry flour", "self-raising flour", "self-rising flour", "strong flour",
+              "maida", "atta", "kunafa", "kunafeh", "knafeh", "kadayif", "kataifi", "phyllo", "filo",
+              "seitan", "graham", "breadcrumb", "breadcrumbs", "panko",
               "brioche", "soy sauce", "teriyaki", "hoisin", "tempura", "bechamel"),
     "soy": ("miso", "tempeh", "tamari", "soy lecithin", "soy sauce", "teriyaki", "hoisin",
             "textured vegetable protein", "tvp"),
@@ -76,9 +79,10 @@ _PRODUCT_EXTRA: dict[str, tuple[str, ...]] = {
 }
 
 
-def _compile(terms: tuple[str, ...]) -> re.Pattern:
+def _compile(terms: tuple[str, ...], plural: bool = False) -> re.Pattern:
     alt = "|".join(re.escape(t) for t in sorted(terms, key=len, reverse=True))
-    return re.compile(rf"(?<![a-z])(?:{alt})(?![a-z])")
+    tail = "(?:e?s)?" if plural else ""
+    return re.compile(rf"(?<![a-z])(?:{alt}){tail}(?![a-z])")
 
 
 # Terms too ambiguous for the high-precision PRODUCT detector / gate, kept in NAIVE
@@ -86,11 +90,12 @@ def _compile(terms: tuple[str, ...]) -> re.Pattern:
 _PRODUCT_DROP: dict[str, tuple[str, ...]] = {"wheat": ("flour",)}
 
 _NAIVE = {a: (_compile(_NAIVE_TERMS[a]), _NEUTRALIZE.get(a, ())) for a in ALLERGENS}
+# PRODUCT also matches simple plurals ("almonds", "pistachios", "peaches"-style -es); the
+# BASELINE deliberately does not, so the M2 baseline numbers stay reproducible.
 _PRODUCT = {
     a: (_compile(
         tuple(t for t in _NAIVE_TERMS[a] if t not in _PRODUCT_DROP.get(a, ()))
-        + _PRODUCT_EXTRA.get(a, ())
-    ), _NEUTRALIZE.get(a, ()))
+        + _PRODUCT_EXTRA.get(a, ()), plural=True), _NEUTRALIZE.get(a, ()))
     for a in ALLERGENS
 }
 
@@ -106,6 +111,25 @@ def _run(spec, text: str) -> list[str]:
         if pat.search(t):
             found.add(allergen)
     return [a for a in ALLERGENS if a in found]
+
+
+def _evidence(spec, text: str) -> dict[str, list[str]]:
+    base = text.lower()
+    out: dict[str, list[str]] = {}
+    for allergen, (pat, neutralize) in spec.items():
+        t = base
+        for phrase in neutralize:
+            if phrase in t:
+                t = t.replace(phrase, " ")
+        hits = list(dict.fromkeys(m.group(0) for m in pat.finditer(t)))
+        if hits:
+            out[allergen] = hits
+    return out
+
+
+def evidence_product(text: str) -> dict[str, list[str]]:
+    """{allergen: [matched words, in order of first appearance]} for the PRODUCT detector."""
+    return _evidence(_PRODUCT, text)
 
 
 def detect_naive(text: str) -> list[str]:

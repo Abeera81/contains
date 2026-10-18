@@ -23,7 +23,7 @@ def test_nine_allergens_in_falcpa_order():
 def test_contains_line_follows_falcpa_order_not_input_order():
     # Given out-of-order input, the line must come back in FALCPA order.
     line = contains_line(["soy", "milk", "wheat"])
-    assert line == "Contains: Milk, Wheat, Soy"
+    assert line == "Contains: Milk, Wheat, Soybeans"
 
 
 def test_contains_line_empty_when_no_allergen():

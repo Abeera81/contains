@@ -24,13 +24,13 @@ ALLERGENS: tuple[str, ...] = (
 # Human-facing display names for the printed label line.
 DISPLAY_NAMES: dict[str, str] = {
     "milk": "Milk",
-    "egg": "Egg",
+    "egg": "Eggs",
     "fish": "Fish",
-    "crustacean_shellfish": "Crustacean Shellfish",
-    "tree_nuts": "Tree Nuts",
+    "crustacean_shellfish": "Crustacean shellfish",
+    "tree_nuts": "Tree nuts",
     "peanuts": "Peanuts",
     "wheat": "Wheat",
-    "soy": "Soy",
+    "soy": "Soybeans",
     "sesame": "Sesame",
 }
 

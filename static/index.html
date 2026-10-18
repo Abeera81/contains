@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contains</title>
+<style>
+:root{
+  --bg:#faf8f5; --surface:#fff; --ink:#1f2328; --muted:#6b7280; --line:#e2ded6;
+  --contains:#b42318; --contains-bg:#fdecea;
+  --unsure:#8a5a00; --unsure-bg:#fff4d6; --unsure-line:#d19a1e;
+  --absent:#5b6470; --absent-bg:#f1f2f4;
+  --accent:#1d4e89; --warn-bg:#fff1f0; --warn-line:#e0877f;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14161a; --surface:#1d2025; --ink:#e8e6e1; --muted:#9aa1ab; --line:#33373e;
+    --contains:#ff8a80; --contains-bg:#3a1f1d;
+    --unsure:#f5c451; --unsure-bg:#3a2f12; --unsure-line:#b88a1c;
+    --absent:#aab1bb; --absent-bg:#262a30;
+    --accent:#7db4ee; --warn-bg:#3a1f1d; --warn-line:#a8554e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14161a; --surface:#1d2025; --ink:#e8e6e1; --muted:#9aa1ab; --line:#33373e;
+  --contains:#ff8a80; --contains-bg:#3a1f1d;
+  --unsure:#f5c451; --unsure-bg:#3a2f12; --unsure-line:#b88a1c;
+  --absent:#aab1bb; --absent-bg:#262a30;
+  --accent:#7db4ee; --warn-bg:#3a1f1d; --warn-line:#a8554e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 140px}
+h1{font-size:1.5rem;margin:24px 0 2px}
+.sub{color:var(--muted);margin:0 0 16px}
+textarea{width:100%;min-height:150px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+button,label.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;border-radius:10px;font:inherit;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:disabled{opacity:.6;cursor:wait}
+input[type=file]{display:none}
+.banner{margin:14px 0;padding:12px 14px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px}
+.banner b{display:block}
+.label{margin:18px 0 6px;padding:16px;border:2px solid var(--ink);border-radius:6px;background:var(--surface)}
+.label .line{font-size:1.2rem;font-weight:700}
+.label .verify{margin-top:8px;color:var(--unsure);font-weight:600}
+.notes{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:.9rem}
+.ocr{margin:12px 0;font-size:.9rem;color:var(--muted)}
+.ocr textarea{min-height:70px;margin-top:4px}
+table{width:100%;border-collapse:collapse;margin-top:14px}
+td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
+td.n{font-weight:600;white-space:nowrap;width:1%}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.85rem;font-weight:700;white-space:nowrap}
+.pill.contains{background:var(--contains-bg);color:var(--contains);border:1.5px solid var(--contains)}
+.pill.absent{background:var(--absent-bg);color:var(--absent);border:1.5px solid transparent;font-weight:600}
+.pill.unsure{background:var(--unsure-bg);color:var(--unsure);border:2px dashed var(--unsure-line)}
+.chip{display:inline-block;margin:2px 4px 2px 0;padding:1px 8px;border-radius:6px;font-size:.85rem;background:var(--absent-bg);border:1px solid var(--line)}
+.chip.rules{border-color:var(--contains)}
+.chip.model{font-style:italic}
+.chip small{color:var(--muted);margin-left:4px}
+.disclaimer{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:2px solid var(--ink);padding:10px 16px;font-size:.85rem;z-index:5}
+.disclaimer div{max-width:760px;margin:0 auto}
+.foot{color:var(--muted);font-size:.8rem;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Contains</h1>
+  <p class="sub">Paste a recipe or ingredient list. Get a US-style “Contains:” line, with the evidence.</p>
+
+  <textarea id="text" placeholder="e.g. wheat flour, butter, worcestershire sauce, pistachio spread, vanilla essence" aria-label="Ingredient list or recipe"></textarea>
+  <div class="row">
+    <button class="primary" id="go">Check allergens</button>
+    <label class="btn" for="photo">Upload a label photo</label>
+    <input type="file" id="photo" accept="image/*">
+  </div>
+  <div id="status" class="sub" role="status"></div>
+  <div id="out"></div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<div class="disclaimer" role="note"><div>
+  <b>Not a substitute for the manufacturer’s label.</b> Formulation-dependent items (marked <em>unsure</em>) must be confirmed with the supplier.
+</div></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const STATUS = { contains: "✔ Contains", absent: "— Absent", unsure: "? Unsure" };
+
+function chips(a) {
+  const box = el("div");
+  if (a.status === "contains") {
+    a.evidence.forEach(w => { const c = el("span", "chip rules", w); c.appendChild(el("small", null, "rules")); box.appendChild(c); });
+    if (a.layers.includes("model") && a.evidence.length) { const c = el("span", "chip model", "model agrees"); box.appendChild(c); }
+    if (a.model_inference_only) box.appendChild(el("span", "chip model", "model inference — no matched term"));
+  } else if (a.status === "unsure") {
+    box.appendChild(el("span", "chip model", "model unsure — confirm with supplier"));
+  }
+  return box;
+}
+
+function render(r) {
+  const out = $("out"); out.textContent = "";
+  if (r.banner) { const b = el("div", "banner"); b.appendChild(el("b", null, "Heads up")); b.appendChild(document.createTextNode(r.banner)); out.appendChild(b); }
+  if (r.ocr_error) { out.appendChild(el("div", "banner", r.ocr_error)); return; }
+  if (r.empty) { $("foot").textContent = ""; return; }
+  if (r.ocr_text) {
+    const o = el("div", "ocr", "Read from photo (edit if wrong, then press Check allergens):");
+    const t = el("textarea"); t.value = r.ocr_text; t.id = "ocrtext"; o.appendChild(t); out.appendChild(o);
+    $("text").value = r.ocr_text;
+  }
+  const lab = el("div", "label");
+  lab.appendChild(el("div", "line", r.contains_line));
+  if (r.verify_line) lab.appendChild(el("div", "verify", r.verify_line));
+  if (r.notes.length) { const ul = el("ul", "notes"); r.notes.forEach(n => ul.appendChild(el("li", null, n))); lab.appendChild(ul); }
+  out.appendChild(lab);
+  if (r.truncated) out.appendChild(el("p", "foot", "Input was long; only the first 6,000 characters were checked."));
+  const tb = el("table");
+  r.allergens.forEach(a => {
+    const tr = el("tr");
+    tr.appendChild(el("td", "n", a.name));
+    const s = el("td"); s.appendChild(el("span", "pill " + a.status, STATUS[a.status])); tr.appendChild(s);
+    const e = el("td"); e.appendChild(chips(a)); tr.appendChild(e);
+    tb.appendChild(tr);
+  });
+  out.appendChild(tb);
+  $("foot").textContent = r.sampler === "rules_only" ? "Layers used: rules only." : "Layers used: fine-tuned model (" + r.sampler + ") + rules.";
+}
+
+async function post(url, body, headers) {
+  const res = await fetch(url, { method: "POST", body, headers });
+  return res.json();
+}
+async function run(fn, msg) {
+  $("go").disabled = true; $("status").textContent = msg;
+  try { render(await fn()); $("status").textContent = ""; }
+  catch (e) { $("status").textContent = ""; render({ empty: true, banner: "Couldn’t reach the server. Check your connection and try again.", allergens: [], notes: [] }); }
+  $("go").disabled = false;
+}
+$("go").onclick = () => run(() => post("/api/label", JSON.stringify({ text: ($("ocrtext") || $("text")).value }), { "Content-Type": "application/json" }), "Checking…");
+// "#text=..." prefills and runs (fragment stays in the browser; never sent to the server)
+if (location.hash.startsWith("#text=")) { $("text").value = decodeURIComponent(location.hash.slice(6)); $("go").click(); }
+$("photo").onchange = (ev) => {
+  const f = ev.target.files[0]; if (!f) return;
+  run(() => post("/api/photo", f, { "Content-Type": f.type || "application/octet-stream" }), "Reading the photo on this computer (Gemma 3 4B) — this can take a minute…");
+  ev.target.value = "";
+};
+</script>
+</body>
+</html>

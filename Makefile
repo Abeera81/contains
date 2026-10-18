@@ -21,7 +21,7 @@ eval:  ## full evaluation -> docs/RESULTS.md + charts
 	@echo "eval: NOT IMPLEMENTED (milestone M3)"; exit 1
 
 app:  ## run FastAPI app at http://127.0.0.1:8000
-	@echo "app: NOT IMPLEMENTED (milestone M4)"; exit 1
+	$(PY) uvicorn contains.app:app --host 127.0.0.1 --port 8000
 
 test:  ## unit tests
 	$(PY) pytest

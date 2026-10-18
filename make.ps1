@@ -28,6 +28,6 @@ switch ($Target) {
     "baselines" { Write-Host "baselines: NOT IMPLEMENTED (milestone M2)"; exit 1 }
     "train"     { Write-Host "train: NOT IMPLEMENTED (milestone M3)"; exit 1 }
     "eval"      { Write-Host "eval: NOT IMPLEMENTED (milestone M3)"; exit 1 }
-    "app"       { Write-Host "app: NOT IMPLEMENTED (milestone M4)"; exit 1 }
+    "app"       { Invoke-Step "uv run uvicorn contains.app:app --host 127.0.0.1 --port 8000" }
     default     { Write-Host "Targets: setup, test, smoke, data, baselines, train, eval, app" }
 }
