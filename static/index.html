@@ -6,109 +6,131 @@
 <title>Contains</title>
 <style>
 :root{
-  --bg:#f6f4ef; --card:#fff; --line:#e6e2d8; --ink:#1d2125; --muted:#6a707a;
-  --blue:#2457c5; --blue-ink:#fff;
-  --amb-bg:#fff7e0; --amb-line:#d9a21b; --amb-ink:#7a5200;
-  --solid:#1d2125; --solid-ink:#fff;
+  --bg:#faf8f4; --card:#fff; --line:#e6e3dc; --ink:#1b2a4a; --muted:#6b7a99; --faint:#98a3b8; --panel:#f7f8fa;
+  --blue:#1f5fb4; --blue-ink:#fff;
+  --det-bg:#fde8ec; --det-ink:#c0283d;
+  --amb-bg:#fff6e0; --amb-line:#d9a21b; --amb-ink:#7a5200; --amb-pill:#ffefc2;
+  --ban-bg:#fdf3e3; --ban-line:#f0dbb5; --ban-pill:#fbe3bd; --ban-pill-ink:#6b4300;
   --warn-bg:#fff1f0; --warn-line:#e0877f;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#14161a; --card:#1d2025; --line:#33373e; --ink:#ececec; --muted:#9aa1ab;
+    --bg:#12151c; --card:#1b2029; --line:#313846; --ink:#e8ecf5; --muted:#9aa6bf; --faint:#7f8aa3; --panel:#232a37;
     --blue:#6a9bff; --blue-ink:#10151f;
-    --amb-bg:#3a2f12; --amb-line:#b88a1c; --amb-ink:#f5c451;
-    --solid:#ececec; --solid-ink:#14161a;
+    --det-bg:#4a2326; --det-ink:#ff9d9d;
+    --amb-bg:#3a2f12; --amb-line:#b88a1c; --amb-ink:#f5c451; --amb-pill:#4d3d14;
+    --ban-bg:#33291a; --ban-line:#5c4a28; --ban-pill:#4d3d14; --ban-pill-ink:#f5d58a;
     --warn-bg:#3a1f1d; --warn-line:#a8554e;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#14161a; --card:#1d2025; --line:#33373e; --ink:#ececec; --muted:#9aa1ab;
+  --bg:#12151c; --card:#1b2029; --line:#313846; --ink:#e8ecf5; --muted:#9aa6bf; --faint:#7f8aa3; --panel:#232a37;
   --blue:#6a9bff; --blue-ink:#10151f;
-  --amb-bg:#3a2f12; --amb-line:#b88a1c; --amb-ink:#f5c451;
-  --solid:#ececec; --solid-ink:#14161a;
+  --det-bg:#4a2326; --det-ink:#ff9d9d;
+  --amb-bg:#3a2f12; --amb-line:#b88a1c; --amb-ink:#f5c451; --amb-pill:#4d3d14;
+  --ban-bg:#33291a; --ban-line:#5c4a28; --ban-pill:#4d3d14; --ban-pill-ink:#f5d58a;
   --warn-bg:#3a1f1d; --warn-line:#a8554e;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-.wrap{max-width:720px;margin:0 auto;padding:0 16px 170px}
-.brand{display:flex;align-items:center;gap:10px;margin:28px 0 4px}
-.brand svg{width:34px;height:34px;flex:none}
-.brand h1{font-size:1.6rem;line-height:1;margin:0;letter-spacing:-.01em}
-.sub{color:var(--muted);margin:0 0 20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
-textarea{width:100%;min-height:140px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;resize:vertical}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:660px;margin:0 auto;padding:0 20px 180px}
+.brand{display:flex;align-items:center;gap:14px;margin:40px 0 4px}
+.brand svg{width:36px;height:40px;flex:none;color:var(--blue)}
+.brand h1{font-size:1.8rem;line-height:1;margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 28px 50px}
+textarea{width:100%;min-height:140px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;resize:vertical}
 textarea:focus{outline:2px solid var(--blue);outline-offset:1px}
-.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
-button,label.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 18px;border-radius:12px;font:inherit;font-weight:600;cursor:pointer}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;align-items:center}
+button,label.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:12px 22px;border-radius:12px;font:inherit;font-weight:600;cursor:pointer}
 button.primary{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
 button svg{width:18px;height:18px;flex:none}
 button:disabled{opacity:.6;cursor:wait}
 input[type=file]{display:none}
 .hint{color:var(--muted);font-size:.9rem}
 .hint a{color:var(--blue)}
-.banner{margin:16px 0 0;padding:12px 14px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:12px}
+.banner{margin:20px 0 0;padding:14px 18px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:14px}
 .banner b{display:block}
-#out{margin-top:18px}
-.summary{display:flex;align-items:center;gap:12px;padding:14px 16px;font-weight:700;font-size:1.05rem}
-.summary .sdot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--solid);color:var(--solid-ink);flex:none}
-.summary .sdot svg{width:18px;height:18px}
-.summary small{display:block;font-weight:400;color:var(--muted);font-size:.88rem}
-.label{margin-top:14px;border:3px solid var(--ink);border-radius:6px;background:var(--card)}
-.label .top{display:flex;align-items:flex-start;gap:10px;padding:14px 16px}
-.label .line{flex:1;font-size:clamp(1.35rem,5vw,1.9rem);line-height:1.2;font-weight:800;overflow-wrap:anywhere}
+hr{border:0;border-top:1px solid var(--line);margin:32px 0 0}
+h2.res{font-size:1.25rem;font-weight:800;margin:24px 0 16px;letter-spacing:-.01em}
+h2.sec{font-size:.85rem;font-weight:600;color:var(--muted);margin:30px 2px 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+.summary{display:flex;align-items:flex-start;gap:16px;padding:20px 22px;background:var(--ban-bg);border-color:var(--ban-line)}
+.summary .sic{width:30px;height:30px;color:var(--amb-ink);flex:none}
+.summary .sic svg{width:30px;height:30px}
+.summary .st{font-weight:700;font-size:1.06rem;line-height:1.35;padding-top:2px}
+.summary small{display:block;font-weight:400;color:var(--muted);font-size:.86rem;margin-top:2px}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pill{padding:3px 14px;border-radius:999px;font-size:.86rem;background:var(--ban-pill);color:var(--ban-pill-ink)}
+.pill.q{background:transparent;border:1.5px dashed var(--amb-line);color:var(--amb-ink)}
+.label{margin-top:16px;border:2.5px solid var(--ink);border-radius:14px;background:var(--card);overflow:hidden}
+.label .top{display:flex;align-items:flex-start;gap:12px;padding:20px 22px}
+.label .line{flex:1;font-size:clamp(1.35rem,5vw,1.8rem);line-height:1.25;font-weight:800;overflow-wrap:anywhere}
 .label .k{text-transform:uppercase;letter-spacing:.02em}
-.label .verify{padding:10px 16px;border-top:1.5px solid var(--ink);font-weight:600;overflow-wrap:anywhere}
-.label .verify .k{font-size:.85rem;letter-spacing:.04em;margin-right:4px}
-.label .notes{margin:0;padding:8px 16px 10px 34px;border-top:1px dotted var(--ink);color:var(--muted);font-size:.85rem}
-.copy{padding:6px 12px;font-size:.85rem;border-radius:8px;flex:none}
+.label .verify{padding:14px 22px;border-top:1.5px solid var(--ink);font-weight:600;overflow-wrap:anywhere;color:var(--amb-ink);background:var(--amb-bg)}
+.label .verify .k{font-size:.82rem;letter-spacing:.05em;margin-right:6px}
+.label .notes{margin:0;padding:12px 22px 14px 40px;border-top:1px dotted var(--ink);color:var(--muted);font-size:.86rem}
+.copy{padding:7px 14px;font-size:.85rem;border-radius:10px;flex:none}
 .copy svg{width:15px;height:15px}
-.ocr{margin-top:14px;font-size:.9rem;color:var(--muted)}
-.ocr textarea{min-height:70px;margin-top:4px}
-h2{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:24px 2px 8px}
-.a{display:flex;gap:14px;margin-top:10px;padding:14px 16px}
-.a.unsure{background:var(--amb-bg);border:2px dashed var(--amb-line)}
-.ic{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:var(--ic-fg);background:color-mix(in srgb,var(--ic-fg) 15%,var(--card))}
-.ic svg{width:30px;height:30px}
+.ocr{margin-top:16px;font-size:.9rem;color:var(--muted)}
+.ocr textarea{min-height:70px;margin-top:6px}
+details.a{margin-top:14px}
+details.a.unsure{background:var(--amb-bg);border:2px dashed var(--amb-line)}
+details.a>summary{display:flex;align-items:center;gap:16px;padding:20px 22px;cursor:pointer;list-style:none}
+details.a>summary::-webkit-details-marker{display:none}
+details.a[open]>summary{padding-bottom:14px}
+.chev{margin-left:auto;width:22px;height:22px;color:var(--muted);flex:none}
+.chev svg{width:22px;height:22px}
+details.a[open] .chev{transform:rotate(180deg)}
+.ic{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:var(--ic-fg);background:color-mix(in srgb,var(--ic-fg) 15%,var(--card))}
+.ic svg{width:28px;height:28px}
 .ic-milk{--ic-fg:#2f6fd0}.ic-egg{--ic-fg:#c58a00}.ic-fish{--ic-fg:#1d8f9c}.ic-crustacean_shellfish{--ic-fg:#d0533c}
-.ic-tree_nuts{--ic-fg:#8a5a2b}.ic-peanuts{--ic-fg:#b8741f}.ic-wheat{--ic-fg:#a68a1a}.ic-soy{--ic-fg:#4f8f3a}.ic-sesame{--ic-fg:#7a5cc4}
-.a .body{flex:1;min-width:0}
-.a .hd{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
-.a .nm{font-weight:700;font-size:1.05rem}
-.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
-.badge.contains{background:var(--solid);color:var(--solid-ink)}
-.badge.unsure{color:var(--amb-ink);border:2px dashed var(--amb-line)}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.chip{display:inline-flex;align-items:baseline;gap:7px;max-width:100%;padding:3px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:.92rem;overflow-wrap:anywhere}
-.unsure .chip{border-color:var(--amb-line)}
-.chip .w{font-weight:400}
-.chip .tag{font-size:.72rem;color:var(--muted)}
+.ic-tree_nuts{--ic-fg:#8a5a2b}.ic-peanuts{--ic-fg:#b8741f}.ic-wheat{--ic-fg:#4f8f3a}.ic-soy{--ic-fg:#7a9a2e}.ic-sesame{--ic-fg:#7a5cc4}
+.nm{font-weight:700;font-size:1.2rem;line-height:1.2}
+.badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:.69rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.badge.contains{background:var(--det-bg);color:var(--det-ink)}
+.badge.unsure{background:var(--amb-pill);color:var(--amb-ink);box-shadow:inset 0 0 0 1.5px var(--amb-line)}
+.ev{margin:0 22px 22px;padding:12px;background:var(--panel);border-radius:12px}
+.unsure .ev{background:var(--card)}
+.ev .lbl{font-size:.78rem;color:var(--faint);margin:0 0 8px 2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:baseline;gap:7px;max-width:100%;padding:4px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:.9rem;overflow-wrap:anywhere}
+.chip .tag{color:var(--faint);font-size:.84rem}
+.chip .tag::before{content:"\00b7";margin-right:7px}
 .chip.infer{font-style:italic}
-.why{margin:8px 0 0;font-size:.88rem;color:var(--amb-ink);font-weight:600}
-.none{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.none .chip{background:transparent;border-style:dashed;color:var(--muted)}
-.disclaimer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:2px solid var(--ink);padding:10px 16px;font-size:.85rem;z-index:5}
-.disclaimer div{max-width:720px;margin:0 auto}
-.foot{color:var(--muted);font-size:.8rem;margin-top:16px}
-@media (max-width:480px){button.primary,label.btn{flex:1 1 100%}.a{padding:12px}.ic{width:42px;height:42px}.ic svg{width:26px;height:26px}}
+.why{margin:10px 2px 0;font-size:.88rem;color:var(--amb-ink);font-weight:600}
+.none{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.none .chip{background:var(--panel);border-color:transparent;color:var(--muted);font-size:.84rem;padding:3px 14px}
+.disclaimer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:2px solid var(--ink);padding:12px 20px;font-size:.85rem;z-index:5}
+.disclaimer div{max-width:660px;margin:0 auto}
+.foot{color:var(--muted);font-size:.8rem;margin-top:24px}
+@media (max-width:480px){
+  .wrap{padding:0 16px 190px}
+  button.primary,label.btn{flex:1 1 100%}
+  .sub{margin-left:0}
+  .summary{padding:16px}
+  details.a>summary{padding:16px;gap:12px}
+  details.a[open]>summary{padding-bottom:12px}
+  .ev{margin:0 16px 16px}
+  .label .top{padding:16px}.label .verify{padding:12px 16px}.label .notes{padding:10px 16px 12px 34px}
+  .nm{font-size:1.1rem}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="brand">
-    <svg viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#2457c5"/><path d="M17 6.5l9 3.2v6.6c0 5.2-3.7 8.9-9 11.2-5.3-2.3-9-6-9-11.2V9.7z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M12.7 17l3 3 5.6-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg viewBox="0 0 34 38" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l12 4.2v8.8c0 7-5 12.2-12 15-7-2.8-12-8-12-15V7.2z"/><path d="M12 24c0-6 4-10 11-11-.5 6-4 10-11 11z"/><path d="M12 24l6-6"/></svg>
     <h1>Contains</h1>
   </div>
-  <p class="sub">Paste a recipe or ingredient list. Get a US-style “Contains:” line, with the evidence.</p>
+  <p class="sub">Check a recipe or ingredient list for common allergens.</p>
 
-  <div class="card">
-    <textarea id="text" placeholder="e.g. wheat flour, butter, worcestershire sauce, pistachio spread, vanilla essence" aria-label="Ingredient list or recipe"></textarea>
-    <div class="row">
-      <button class="primary" id="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.7-8 9-4.8-1.3-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>Check allergens</button>
-      <label class="btn" for="photo">Upload a label photo</label>
-      <input type="file" id="photo" accept="image/*">
-    </div>
+  <textarea id="text" placeholder="e.g. wheat flour, butter, worcestershire sauce, pistachio spread, vanilla essence" aria-label="Ingredient list or recipe"></textarea>
+  <div class="row">
+    <button class="primary" id="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>Check allergens</button>
+    <label class="btn" for="photo">Upload a label photo</label>
+    <input type="file" id="photo" accept="image/*">
   </div>
-  <div id="status" class="hint" role="status" style="margin-top:10px"></div>
+  <div id="status" class="hint" role="status" style="margin-top:12px"></div>
   <div id="out"></div>
   <p class="foot" id="foot"></p>
 </div>
@@ -134,7 +156,8 @@ const ICON = {
   sesame: SV('<ellipse cx="8" cy="9" rx="2.2" ry="1.3" transform="rotate(-30 8 9)"/><ellipse cx="16" cy="8" rx="2.2" ry="1.3" transform="rotate(25 16 8)"/><ellipse cx="12" cy="15" rx="2.2" ry="1.3" transform="rotate(-10 12 15)"/>')
 };
 const ICO_CHECK = SV('<path d="M5 12.5l4.5 4.5L19 7.5"/>');
-const ICO_Q = SV('<path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.2-1.5 2.4"/><circle cx="12" cy="17.5" r=".6" fill="currentColor"/>');
+const ICO_WARN = SV('<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.3" r=".7" fill="currentColor"/>');
+const ICO_CHEV = SV('<path d="M6 9l6 6 6-6"/>');
 const ICO_COPY = SV('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>');
 
 function chip(word, tag, cls) {
@@ -165,13 +188,21 @@ function copyText(t, btn) {
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, () => {});
   else { const ta = el("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch (e) {} ta.remove(); }
 }
-function summary(contains, unsure, absent) {
+function summary(C, U, N) {
   const s = el("div", "card summary");
-  const dot = el("span", "sdot"); dot.innerHTML = (unsure && !contains) ? ICO_Q : ICO_CHECK; s.appendChild(dot);
+  const ic = el("span", "sic"); ic.innerHTML = (C.length || U.length) ? ICO_WARN : ICO_CHECK; s.appendChild(ic);
   const t = el("div");
-  const head = contains + " detected" + (unsure ? " · " + unsure + " need checking" : "");
-  t.appendChild(document.createTextNode(contains || unsure ? head : "No major allergens detected"));
-  t.appendChild(el("small", null, absent + " of 9 not detected in this list"));
+  const head = (C.length || U.length)
+    ? C.length + (C.length === 1 ? " allergen" : " allergens") + " detected" + (U.length ? " · " + U.length + " need checking" : "")
+    : "No major allergens detected";
+  t.appendChild(el("div", "st", head));
+  t.appendChild(el("small", null, N.length + " of 9 not detected in this list"));
+  if (C.length || U.length) {
+    const p = el("div", "pills");
+    C.forEach(a => p.appendChild(el("span", "pill", a.name)));
+    U.forEach(a => p.appendChild(el("span", "pill q", a.name + " (check)")));
+    t.appendChild(p);
+  }
   s.appendChild(t);
   return s;
 }
@@ -187,7 +218,9 @@ function render(r) {
     $("text").value = r.ocr_text;
   }
   const C = r.allergens.filter(a => a.status === "contains"), U = r.allergens.filter(a => a.status === "unsure"), N = r.allergens.filter(a => a.status === "absent");
-  out.appendChild(summary(C.length, U.length, N.length));
+  out.appendChild(el("hr"));
+  out.appendChild(el("h2", "res", "Allergen results"));
+  out.appendChild(summary(C, U, N));
 
   const lab = el("div", "label"), top = el("div", "top");
   top.appendChild(labelLine(r.contains_line, "line"));
@@ -200,22 +233,27 @@ function render(r) {
   if (r.truncated) out.appendChild(el("p", "foot", "Input was long; only the first 6,000 characters were checked."));
 
   const card = (a) => {
-    const c = el("div", "card a " + a.status);
-    const ic = el("div", "ic ic-" + a.key); ic.innerHTML = ICON[a.key]; c.appendChild(ic);
-    const body = el("div", "body"), hd = el("div", "hd");
-    hd.appendChild(el("span", "nm", a.name));
-    hd.appendChild(el("span", "badge " + a.status, a.status === "contains" ? "✔ Contains" : "? Needs checking"));
-    body.appendChild(hd); body.appendChild(chips(a));
-    if (a.status === "unsure") body.appendChild(el("p", "why", "Source not named; confirm with supplier."));
-    c.appendChild(body); return c;
+    const c = el("details", "card a " + a.status); c.open = true;
+    const sm = el("summary");
+    const ic = el("div", "ic ic-" + a.key); ic.innerHTML = ICON[a.key]; sm.appendChild(ic);
+    sm.appendChild(el("span", "nm", a.name));
+    sm.appendChild(el("span", "badge " + a.status, a.status === "contains" ? "Detected" : "Needs checking"));
+    const ch = el("span", "chev"); ch.innerHTML = ICO_CHEV; sm.appendChild(ch);
+    c.appendChild(sm);
+    const ev = el("div", "ev"); ev.appendChild(el("div", "lbl", a.status === "contains" ? "Evidence" : "Trigger ingredient"));
+    ev.appendChild(chips(a));
+    if (a.status === "unsure") ev.appendChild(el("p", "why", "Source not named; confirm with supplier."));
+    c.appendChild(ev); return c;
   };
-  if (C.length) { out.appendChild(el("h2", null, "Detected")); C.forEach(a => out.appendChild(card(a))); }
-  if (U.length) { out.appendChild(el("h2", null, "Needs checking")); U.forEach(a => out.appendChild(card(a))); }
+  C.forEach(a => out.appendChild(card(a)));
+  U.forEach(a => out.appendChild(card(a)));
   if (N.length) {
-    out.appendChild(el("h2", null, "Not detected in this list"));
+    out.appendChild(el("h2", "sec", "Not detected in this list"));
     const row = el("div", "none"); N.forEach(a => row.appendChild(chip(a.name))); out.appendChild(row);
   }
-  $("foot").textContent = r.sampler === "rules_only" ? "Layers used: rules only." : "Layers used: fine-tuned model (" + r.sampler + ") + rules.";
+  $("foot").textContent = r.sampler === "rules_only"
+    ? "Detection used ingredient rules only (the model layer was not used). Always verify labels for severe allergies."
+    : "Detection uses ingredient rules and a fine-tuned model. Always verify labels for severe allergies.";
 }
 
 async function post(url, body, headers) {

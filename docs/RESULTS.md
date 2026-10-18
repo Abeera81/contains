@@ -600,3 +600,11 @@ abstained on gold positives: [('trap-002', 'milk'), ('trap-003', 'milk'), ('trap
 false alarms: []
 
 tokens in 13,355 out 2,976
+
+### FINDING 2026-10-18 — the no-trigger downgrade turned 5 LoRA abstentions into confident misses (ships as measured; future work)
+- Source: LoRA-only vs shipped predictions on the frozen traps (`data/eval/frozen_traps_lora_only.jsonl` vs `frozen_traps_shipped_lora_rules.jsonl`; ablation command `uv run python -I scripts/score_frozen_lora_only.py`). Of the shipped config's 11 confident misses, 5 were LoRA abstentions that the pipeline's rule "an unsure verdict only surfaces when the input contains an unnamed-source term, otherwise downgrade to absent" converted into a confident "no": pesto -> milk (trap-002, trap-018), caesar dressing + croutons -> wheat (trap-007), tempura batter -> egg (trap-013), frangipane -> egg (trap-026).
+- Decision (user): the downgrade rule is left exactly as it is. The frozen traps are scored and closed, so changing the merge logic now would be tuning on the test set. With hindsight the trade looks wrong (it suppressed abstentions that sat on real allergens), but that only became visible after scoring, so it ships as measured and is FUTURE WORK. No code was changed.
+
+### Regression check 2026-10-18 — "all purpose flour, butter, eggs, milk, dark chocolate, cooking oil" (+ trailing double-quote)
+- Command: direct `TinkerSampler.verdicts` calls (bypassing the server cache), 3 samples each, then `analyze()`. Exact string WITH the trailing `"`: soy=unsure, peanuts=unsure in 3 of 3 samples (identical to the control without the quote); pipeline output `Verify with supplier: Peanuts (cooking oil), Soybeans (chocolate, cooking oil).` The trailing quote does NOT explain the earlier absent observation.
+- Earlier in the same investigation: 8 of 8 samples of the unquoted string were identical (deterministic), and the code is identical at fba1020 and a64608c. The only fragility found so far: reordering the same ingredients (`...all purpose flour, dark chocolate, cooking oil, butter, eggs, milk`) flipped soy and peanuts from unsure to a confident no. Unsure is deterministic for a given string but brittle across rewordings; the original observation remains unexplained.
