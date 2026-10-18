@@ -16,7 +16,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 from contains import ocr
-from contains.pipeline import analyze
+from contains.pipeline import STATS, analyze
 from contains.sampler import get_sampler
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -59,7 +59,8 @@ def index():
 
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "sampler": getattr(app.state.sampler, "name", "?")}
+    return {"ok": True, "sampler": getattr(app.state.sampler, "name", "?"),
+            "photo": ocr.available(), "unsure_downgraded": STATS["unsure_downgraded"]}
 
 
 @app.post("/api/label")
@@ -78,6 +79,9 @@ async def photo(request: Request):
     data = await request.body()
     try:
         text = ocr.extract_text(data)
+    except ocr.OCRUnavailable:
+        return JSONResponse({"empty": True, "local_only": True, "ocr_error": ocr.LOCAL_ONLY_MESSAGE,
+                             "banner": None, "contains_line": "", "verify_line": "", "notes": [], "allergens": []})
     except ocr.OCRError as e:
         return JSONResponse({"empty": True, "ocr_error": f"Couldn't read the photo: {e}. Type or paste the list instead.",
                              "banner": None, "contains_line": "", "verify_line": "", "notes": [], "allergens": []})

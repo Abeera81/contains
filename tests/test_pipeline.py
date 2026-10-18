@@ -38,11 +38,32 @@ def test_undeterminable_species_falls_back_with_note():
 
 
 def test_merge_rule_model_only_yes_and_unsure():
-    r = analyze("mystery ingredient", Fake({"sesame": "yes", "milk": "unsure"}))
+    r = analyze("mystery ingredient, natural flavouring", Fake({"sesame": "yes", "milk": "unsure"}))
     s = by(r)
     assert s["sesame"]["status"] == "contains" and s["sesame"]["model_inference_only"] and s["sesame"]["layers"] == ["model"]
-    assert s["milk"]["status"] == "unsure"
-    assert r["verify_line"] == "Verify with supplier: Milk."
+    assert s["milk"]["status"] == "unsure" and s["milk"]["unsure_because"] == ["natural flavouring"]
+    assert r["verify_line"] == "Verify with supplier: Milk (natural flavouring)."
+
+
+def test_unsure_without_unnamed_source_term_is_downgraded_and_counted():
+    from contains.pipeline import STATS
+    n = STATS["unsure_downgraded"]
+    r = analyze("sugar, water, salt", Fake({"soy": "unsure", "wheat": "unsure"}))
+    assert all(a["status"] == "absent" for a in r["allergens"]) and r["verify_line"] == ""
+    assert STATS["unsure_downgraded"] == n + 2
+
+
+def test_unsure_is_allergen_specific_and_named_sources_do_not_trigger():
+    from contains.unsure import unsure_triggers
+    t = unsure_triggers("semisweet chocolate, cooking oil, banaspati (hydrogenated vegetable fat)")
+    assert t["soy"] == ["chocolate", "cooking oil", "banaspati"] and t["peanuts"] == ["cooking oil"]
+    assert "wheat" not in t
+    for named in ("milk chocolate", "white chocolate", "sunflower lecithin", "soy lecithin", "natural vanilla flavor",
+                  "vanilla essence", "canola oil"):
+        assert unsure_triggers(named) == {}, named
+    # soy unsure from chocolate/oil only; peanuts unsure needs an oil term
+    r = analyze("chocolate chips", Fake({"soy": "unsure", "peanuts": "unsure"}))
+    assert by(r)["soy"]["status"] == "unsure" and by(r)["peanuts"]["status"] == "absent"
 
 
 def test_rules_hit_beats_model_no_and_unsure_and_both_layers():
@@ -107,3 +128,19 @@ def test_named_wheat_flours_and_kunafa_are_wheat():
     for t in ("all-purpose flour, sugar", "roasted kunafa", "plain flour"):
         assert "wheat" in detect_product(t), t
     assert "wheat" not in detect_product("almond flour, rice flour")
+
+
+def test_photo_unavailable_returns_local_only_message_not_error(monkeypatch):
+    from contains import ocr
+    monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:9")  # nothing listens here
+    ocr._avail["t"] = 0.0
+    import io
+    from PIL import Image
+    b = io.BytesIO(); Image.new("RGB", (10, 10), "white").save(b, format="PNG")
+    appmod.app.state.sampler = Fake()
+    c = TestClient(appmod.app)
+    j = c.post("/api/photo", content=b.getvalue())
+    assert j.status_code == 200 and j.json()["local_only"] is True
+    assert "local-only" in j.json()["ocr_error"] and "README" in j.json()["ocr_error"]
+    ocr._avail["t"] = 0.0
+    assert c.get("/healthz").json()["photo"] is False

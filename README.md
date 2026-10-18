@@ -24,6 +24,23 @@ Copy `.env.example` to `.env` and fill `TINKER_API_KEY`. The same key is used fo
 training, LoRA sampling, and the `gpt-oss-120b` big-model baseline — there is no second
 inference account.
 
+## Run the app
+
+```bash
+uv run uvicorn contains.app:app --host 127.0.0.1 --port 8000     # or: make app / ./make.ps1 app
+```
+
+Config via `.env` / environment: `SAMPLER=tinker_lora|tinker_base|ollama|rules_only` (swap the model
+layer with no code change), `LORA_SAMPLER_PATH`, `TINKER_API_KEY`. If the model layer is unreachable
+the app answers rules-only and shows a banner.
+
+### Photo reading (local-only)
+
+Reading a label photo runs **Gemma 3 4B in Ollama on your own machine**; the hosted demo has no
+Ollama (and not the RAM for it), so there the page says photo reading is local-only and you paste
+the text instead. To use photos: install [Ollama](https://ollama.com), `ollama pull gemma3:4b`, run
+the app locally as above. Expect ~10-60 s per photo on CPU.
+
 ## Architecture (short)
 
 - **remote** backend: Tinker sampling, Qwen3.5-4B + our LoRA (hosted demo on Render free tier)

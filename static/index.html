@@ -95,7 +95,7 @@ function chips(a) {
     if (a.layers.includes("model") && a.evidence.length) { const c = el("span", "chip model", "model agrees"); box.appendChild(c); }
     if (a.model_inference_only) box.appendChild(el("span", "chip model", "model inference — no matched term"));
   } else if (a.status === "unsure") {
-    box.appendChild(el("span", "chip model", "model unsure — confirm with supplier"));
+    box.appendChild(el("span", "chip model", "unsure, because: " + a.unsure_because.join(", ") + " — source not named; confirm with supplier"));
   }
   return box;
 }
@@ -139,6 +139,15 @@ async function run(fn, msg) {
   $("go").disabled = false;
 }
 $("go").onclick = () => run(() => post("/api/label", JSON.stringify({ text: ($("ocrtext") || $("text")).value }), { "Content-Type": "application/json" }), "Checking…");
+// Photo reading is local-only: if the server can't reach Ollama, say so instead of showing a broken upload.
+fetch("/healthz").then(r => r.json()).then(h => {
+  if (h.photo === false) {
+    const lab = document.querySelector('label[for="photo"]');
+    const note = el("span", "sub", "Photo reading is local-only (needs Gemma on your computer). ");
+    const a = el("a", null, "How to run it locally"); a.href = "https://github.com/Abeera81/contains#photo-reading-local-only"; a.target = "_blank"; a.rel = "noopener";
+    note.appendChild(a); lab.replaceWith(note);
+  }
+}).catch(() => {});
 // "#text=..." prefills and runs (fragment stays in the browser; never sent to the server)
 if (location.hash.startsWith("#text=")) { $("text").value = decodeURIComponent(location.hash.slice(6)); $("go").click(); }
 $("photo").onchange = (ev) => {

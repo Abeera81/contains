@@ -17,7 +17,14 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 from contains.labels import ALLERGENS, DISPLAY_NAMES
+import logging
+
 from contains.rules import evidence_product
+from contains.unsure import unsure_triggers
+
+log = logging.getLogger("contains")
+# counts only; ingredient text is never logged
+STATS = {"unsure_downgraded": 0}
 
 MAX_CHARS = 6000
 MODEL_TIMEOUT_S = 25.0
@@ -102,6 +109,7 @@ def analyze(text: str, sampler, timeout: float = MODEL_TIMEOUT_S) -> dict:
         return {"empty": True, "banner": None, "contains_line": "", "verify_line": "", "notes": [],
                 "allergens": [], "sampler": "none", "truncated": False}
     rules = evidence_product(text)
+    triggers = unsure_triggers(text)
     model, fail = _model_verdicts(text, sampler, timeout)
     banner = None
     if fail:
@@ -124,7 +132,11 @@ def analyze(text: str, sampler, timeout: float = MODEL_TIMEOUT_S) -> dict:
         elif m == "yes":
             status, layers = "contains", ["model"]
         elif m == "unsure":
-            status, layers = "unsure", ["model"]
+            if triggers.get(a):
+                status, layers = "unsure", ["model"]
+            else:  # model hedged with no unnamed-source term in the input -> not shown
+                STATS["unsure_downgraded"] += 1
+                log.info("unsure downgraded to absent (allergen=%s, total=%d)", a, STATS["unsure_downgraded"])
         species, note = None, None
         if status == "contains" and a in _SPECIES_CATEGORIES:
             found = list(dict.fromkeys(s for s in (_species_for(a, w) for w in words) if s))
@@ -138,9 +150,10 @@ def analyze(text: str, sampler, timeout: float = MODEL_TIMEOUT_S) -> dict:
         if status == "contains":
             line_parts.append(f"{name} ({', '.join(species)})" if species else name)
         elif status == "unsure":
-            verify.append(name)
+            verify.append(f"{name} ({', '.join(triggers[a])})")
         items.append({"key": a, "name": name, "status": status, "layers": layers, "evidence": words,
                       "model_inference_only": status == "contains" and not words,
+                      "unsure_because": triggers[a] if status == "unsure" else [],
                       "species": species, "note": note})
     return {
         "empty": False, "banner": banner, "truncated": truncated,
