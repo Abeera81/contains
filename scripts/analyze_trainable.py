@@ -24,6 +24,9 @@ TRAIN = Path(__file__).resolve().parent.parent / "data" / "splits" / "train.json
 
 
 def main() -> int:
+    global TRAIN
+    if len(sys.argv) > 1:
+        TRAIN = Path(sys.argv[1])
     if not TRAIN.exists():
         print(f"FAIL: analyze_trainable — {TRAIN} not found; run make_splits.py first.")
         return 1
