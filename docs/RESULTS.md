@@ -458,3 +458,108 @@ Spend: probe ~$0.53 + train ~$1.46 + scoring ~$0.50 (est. at base sampling price
 - Overlap with the 62 frozen trap rows (free check, no API calls; regex over data/verified/traps.jsonl): the added wheat terms appear in **0** rows. Plural matching creates a new surface match in **5** rows (trap-006 "almonds", trap-016 "almonds", trap-017 "hazelnuts", trap-021 "pine nuts", trap-033 "fish balls"); it changes a product verdict in **1** (trap-021, tree_nuts, a gold positive: a miss becomes a hit, flattering rules_product on that row).
 - `rules_naive` (the baseline) was NOT touched: the diff 7616720 vs e2e5809 changes no `_NAIVE_TERMS`/`_NAIVE` line, `_compile` defaults to plural=False, and re-running it reproduces all 300 cached M2 predictions (0 of 300 differ).
 - Caveat: rules_product shares authorship with the trap set and is only ever reported as "LoRA + rules_product", never as a competitor.
+
+
+## FROZEN TRAPS — single scored run, 2026-10-18 (first and only time scored)
+- Commands: `uv run python -I scripts/score_frozen_traps.py` (sampled + saved predictions to `data/eval/frozen_traps_*.jsonl`; crashed on a console-encoding `print` AFTER sampling and saving), then `uv run python -I scripts/report_frozen_traps.py` (re-reads the saved predictions, makes NO API calls; produced every table below). No system was re-sampled.
+- Freeze: traps sha256 e62378cc (verified immediately before scoring); `rules_product` frozen at HEAD 189392c (`src/contains/rules.py` sha256 7b966af7daf1) — no rules edits after this point, for any reason; later misses are findings, not patches.
+- Systems: (1) SHIPPED = LoRA + rules_product through `contains.pipeline.analyze` (merge rule + unsure downgrade; 0 of 62 rows fell back to rules-only); (2) `rules_naive` alone; (3) Qwen3.5-4B zero-shot (same prompt/parser as the M2 baselines). Verdict mapping: contains->yes, absent->no, unsure->unsure. Abstentions are NEVER counted as recall; "CONFIDENT MISS" = said no.
+- Rule-of-thumb read: recall = caught / gold+, confident-miss rate = said-no / gold+.
+
+### Headline (85 gold positives over 62 rows; 49 hidden + 13 clean negatives)
+| system | caught | CONFIDENT MISS | abstained | false alarms |
+|---|---|---|---|---|
+| 1. SHIPPED LoRA + rules_product | 73 (0.86) | 11 (0.13) | 1 | 0 |
+| 1b. SHIPPED without trap-021 (83 gold+) | 71 (0.86) | 11 (0.13) | 1 | 0 |
+| 2. rules_naive (baseline) | 48 (0.56) | 37 (0.44) | 0 | 4 |
+| 3. Qwen3.5-4B zero-shot | 66 (0.78) | 19 (0.22) | 0 | 4 |
+(source: tables below; abstentions on gold NEGATIVES: shipped 5 [soy x4, milk x1], others 0.)
+
+**Footnote — trap-021** (`tomato, mozzarella, basil, balsamic glaze, pine nuts`): the shipped tree_nuts verdict is `yes`, and `rules_product` only matches "pine nuts" because of the plural fix made after seeing first-user recipes (commit 7616720; see the 2026-10-18 note above). Shipped number with the row: 73/85 caught, 11 confident misses; without it: 71/83, 11 confident misses (same ratios, tree_nuts 8/8 vs 7/7). The LoRA's own verdict on that row was not recorded separately, so whether the model alone would have caught it is NOT KNOWN; worst case without the fix is one more caught->missed (72/85).
+
+### Read (no patches made)
+- Shipped config beats both alternatives on recall and confident misses and has 0 false alarms, but it still confidently says "no" on 11 of 85 gold positives (13%) — those are the dangerous errors. Abstention caught only 1 trap (trap-003 milk, couverture chocolate): abstention is NOT what carries the safety here; rules do.
+- Shipped confident misses: wheat x6 (bare "flour" in trap-026/034/045 — product rules drop bare "flour" by design and the LoRA does not say wheat; "imitation crab" trap-027; béchamel trap-025; caesar/croutons trap-007), milk x2 (pesto trap-002/018), egg x2 (tempura batter trap-013; frangipane trap-026), fish x1 (caesar dressing trap-007). Possible vocabulary gap: "béchamel" with an accent is not matched by the "bechamel" rule. All recorded as findings only.
+- rules_naive false alarms are all wheat (4), Qwen false alarms are sesame x3 + egg x1.
+- The earlier traps_dev result (LoRA alone 0.48 recall) is a different, dev-only set and system; the shipped LoRA+rules number here is the headline for the product.
+- Credit: this run = 62 single sampler calls (shipped) + 62 Qwen zero-shot calls, ~124 short calls, est. ~$0.02 (token counts from the crashed print were not saved; Tinker returns no $ field).
+
+traps sha256 e62378cc - n=62 - rules.py sha256 7b966af7daf1
+
+**1. SHIPPED: LoRA + rules_product** (n=62 rows, 85 gold positives)
+
+| allergen | gold+ | caught | CONFIDENT MISS (said no) | abstained | false alarms | abstained on neg |
+|---|---|---|---|---|---|---|
+| milk | 19 | 16 | 2 | 1 | 0 | 1 |
+| egg | 9 | 7 | 2 | 0 | 0 | 0 |
+| fish | 8 | 7 | 1 | 0 | 0 | 0 |
+| crustacean_shellfish | 4 | 4 | 0 | 0 | 0 | 0 |
+| tree_nuts | 8 | 8 | 0 | 0 | 0 | 0 |
+| peanuts | 1 | 1 | 0 | 0 | 0 | 0 |
+| wheat | 21 | 15 | 6 | 0 | 0 | 0 |
+| soy | 8 | 8 | 0 | 0 | 0 | 4 |
+| sesame | 7 | 7 | 0 | 0 | 0 | 0 |
+| **all** | 85 | 73 (0.86) | **11** (0.13) | 1 (0.01) | 0 | 5 |
+
+confident misses (id, allergen): [('trap-002', 'milk'), ('trap-007', 'fish'), ('trap-007', 'wheat'), ('trap-013', 'egg'), ('trap-018', 'milk'), ('trap-025', 'wheat'), ('trap-026', 'egg'), ('trap-026', 'wheat'), ('trap-027', 'wheat'), ('trap-034', 'wheat'), ('trap-045', 'wheat')]
+abstained on gold positives: [('trap-003', 'milk')]
+false alarms: []
+
+**1b. SHIPPED without trap-021** (n=61 rows, 83 gold positives)
+
+| allergen | gold+ | caught | CONFIDENT MISS (said no) | abstained | false alarms | abstained on neg |
+|---|---|---|---|---|---|---|
+| milk | 18 | 15 | 2 | 1 | 0 | 1 |
+| egg | 9 | 7 | 2 | 0 | 0 | 0 |
+| fish | 8 | 7 | 1 | 0 | 0 | 0 |
+| crustacean_shellfish | 4 | 4 | 0 | 0 | 0 | 0 |
+| tree_nuts | 7 | 7 | 0 | 0 | 0 | 0 |
+| peanuts | 1 | 1 | 0 | 0 | 0 | 0 |
+| wheat | 21 | 15 | 6 | 0 | 0 | 0 |
+| soy | 8 | 8 | 0 | 0 | 0 | 4 |
+| sesame | 7 | 7 | 0 | 0 | 0 | 0 |
+| **all** | 83 | 71 (0.86) | **11** (0.13) | 1 (0.01) | 0 | 5 |
+
+confident misses (id, allergen): [('trap-002', 'milk'), ('trap-007', 'fish'), ('trap-007', 'wheat'), ('trap-013', 'egg'), ('trap-018', 'milk'), ('trap-025', 'wheat'), ('trap-026', 'egg'), ('trap-026', 'wheat'), ('trap-027', 'wheat'), ('trap-034', 'wheat'), ('trap-045', 'wheat')]
+abstained on gold positives: [('trap-003', 'milk')]
+false alarms: []
+
+trap-021 ('tomato, mozzarella, basil, balsamic glaze, pine nuts') shipped: tree_nuts=yes milk=yes
+
+**2. rules_naive alone (BASELINE)** (n=62 rows, 85 gold positives)
+
+| allergen | gold+ | caught | CONFIDENT MISS (said no) | abstained | false alarms | abstained on neg |
+|---|---|---|---|---|---|---|
+| milk | 19 | 12 | 7 | 0 | 0 | 0 |
+| egg | 9 | 4 | 5 | 0 | 0 | 0 |
+| fish | 8 | 3 | 5 | 0 | 0 | 0 |
+| crustacean_shellfish | 4 | 4 | 0 | 0 | 0 | 0 |
+| tree_nuts | 8 | 1 | 7 | 0 | 0 | 0 |
+| peanuts | 1 | 1 | 0 | 0 | 0 | 0 |
+| wheat | 21 | 11 | 10 | 0 | 4 | 0 |
+| soy | 8 | 5 | 3 | 0 | 0 | 0 |
+| sesame | 7 | 7 | 0 | 0 | 0 | 0 |
+| **all** | 85 | 48 (0.56) | **37** (0.44) | 0 (0.00) | 4 | 0 |
+
+confident misses (id, allergen): [('trap-001', 'fish'), ('trap-002', 'milk'), ('trap-002', 'tree_nuts'), ('trap-003', 'milk'), ('trap-004', 'fish'), ('trap-006', 'tree_nuts'), ('trap-007', 'milk'), ('trap-007', 'egg'), ('trap-007', 'fish'), ('trap-007', 'wheat'), ('trap-013', 'egg'), ('trap-013', 'wheat'), ('trap-016', 'tree_nuts'), ('trap-017', 'tree_nuts'), ('trap-018', 'milk'), ('trap-018', 'tree_nuts'), ('trap-019', 'egg'), ('trap-021', 'milk'), ('trap-021', 'tree_nuts'), ('trap-022', 'wheat'), ('trap-023', 'wheat'), ('trap-023', 'soy'), ('trap-024', 'wheat'), ('trap-024', 'soy'), ('trap-025', 'wheat'), ('trap-026', 'egg'), ('trap-026', 'tree_nuts'), ('trap-027', 'fish'), ('trap-027', 'wheat'), ('trap-030', 'milk'), ('trap-030', 'wheat'), ('trap-038', 'wheat'), ('trap-044', 'fish'), ('trap-046', 'milk'), ('trap-046', 'egg'), ('trap-046', 'wheat'), ('trap-048', 'soy')]
+abstained on gold positives: []
+false alarms: [('trap-040', 'wheat'), ('trap-052', 'wheat'), ('trap-056', 'wheat'), ('trap-061', 'wheat')]
+
+**3. Qwen3.5-4B zero-shot alone** (n=62 rows, 85 gold positives)
+
+| allergen | gold+ | caught | CONFIDENT MISS (said no) | abstained | false alarms | abstained on neg |
+|---|---|---|---|---|---|---|
+| milk | 19 | 15 | 4 | 0 | 0 | 0 |
+| egg | 9 | 9 | 0 | 0 | 1 | 0 |
+| fish | 8 | 6 | 2 | 0 | 0 | 0 |
+| crustacean_shellfish | 4 | 3 | 1 | 0 | 0 | 0 |
+| tree_nuts | 8 | 5 | 3 | 0 | 0 | 0 |
+| peanuts | 1 | 1 | 0 | 0 | 0 | 0 |
+| wheat | 21 | 14 | 7 | 0 | 0 | 0 |
+| soy | 8 | 6 | 2 | 0 | 0 | 0 |
+| sesame | 7 | 7 | 0 | 0 | 3 | 0 |
+| **all** | 85 | 66 (0.78) | **19** (0.22) | 0 (0.00) | 4 | 0 |
+
+confident misses (id, allergen): [('trap-002', 'milk'), ('trap-002', 'tree_nuts'), ('trap-004', 'fish'), ('trap-007', 'fish'), ('trap-008', 'milk'), ('trap-011', 'wheat'), ('trap-018', 'milk'), ('trap-018', 'tree_nuts'), ('trap-023', 'wheat'), ('trap-023', 'soy'), ('trap-024', 'wheat'), ('trap-026', 'tree_nuts'), ('trap-027', 'crustacean_shellfish'), ('trap-027', 'wheat'), ('trap-030', 'milk'), ('trap-034', 'wheat'), ('trap-038', 'wheat'), ('trap-045', 'wheat'), ('trap-048', 'soy')]
+abstained on gold positives: []
+false alarms: [('trap-007', 'sesame'), ('trap-018', 'sesame'), ('trap-019', 'sesame'), ('trap-025', 'egg')]
