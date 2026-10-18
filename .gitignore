@@ -7,7 +7,8 @@ runs/
 *.gguf
 *.parquet
 .DS_Store
-docs/
+docs/*
+!docs/RESULTS.md
 agent_docs/
 MEMORY.md
 PLAN.md
