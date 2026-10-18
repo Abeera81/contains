@@ -41,6 +41,25 @@ Ollama (and not the RAM for it), so there the page says photo reading is local-o
 the text instead. To use photos: install [Ollama](https://ollama.com), `ollama pull gemma3:4b`, run
 the app locally as above. Expect ~10-60 s per photo on CPU.
 
+### Hosted demo: cold starts and latency
+
+The hosted demo runs on Render's free tier. A free instance **spins down after about 15 minutes of
+inactivity, and the first request after that can take 50 s or more** (Render's documented behaviour)
+while the container restarts and the Tinker client warms up.
+
+Measured on the live site (warm instance, 2026-10-18):
+
+| request | time |
+|---|---|
+| `GET /healthz` | 0.5-1.2 s |
+| first model sample after an idle stretch | ~8.4 s |
+| later new inputs (model sample) | 2-3 s |
+| repeat of an input already seen (in-memory cache) | 0.57 s |
+
+**No cold-start figure is reported.** I tried to measure one after 17+ minutes idle, but the instance
+had not been spun down (the in-memory counters were unchanged, so the process never restarted), and I
+chose not to trigger a redeploy just to time it. Treat the 50 s+ figure as Render's, not ours.
+
 ## Architecture (short)
 
 - **remote** backend: Tinker sampling, Qwen3.5-4B + our LoRA (hosted demo on Render free tier)
