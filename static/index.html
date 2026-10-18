@@ -11,6 +11,7 @@
   --unsure:#8a5a00; --unsure-bg:#fff4d6; --unsure-line:#d19a1e;
   --absent:#5b6470; --absent-bg:#f1f2f4;
   --accent:#1d4e89; --warn-bg:#fff1f0; --warn-line:#e0877f;
+  --solid-bg:#1f2328; --solid-ink:#fff;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -19,6 +20,7 @@
     --unsure:#f5c451; --unsure-bg:#3a2f12; --unsure-line:#b88a1c;
     --absent:#aab1bb; --absent-bg:#262a30;
     --accent:#7db4ee; --warn-bg:#3a1f1d; --warn-line:#a8554e;
+    --solid-bg:#e8e6e1; --solid-ink:#14161a;
   }
 }
 :root[data-theme="dark"]{
@@ -27,10 +29,11 @@
   --unsure:#f5c451; --unsure-bg:#3a2f12; --unsure-line:#b88a1c;
   --absent:#aab1bb; --absent-bg:#262a30;
   --accent:#7db4ee; --warn-bg:#3a1f1d; --warn-line:#a8554e;
+  --solid-bg:#e8e6e1; --solid-ink:#14161a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-.wrap{max-width:760px;margin:0 auto;padding:0 16px 140px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 160px}
 h1{font-size:1.5rem;margin:24px 0 2px}
 .sub{color:var(--muted);margin:0 0 16px}
 textarea{width:100%;min-height:150px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;resize:vertical}
@@ -41,23 +44,30 @@ button:disabled{opacity:.6;cursor:wait}
 input[type=file]{display:none}
 .banner{margin:14px 0;padding:12px 14px;border:1px solid var(--warn-line);background:var(--warn-bg);border-radius:10px}
 .banner b{display:block}
-.label{margin:18px 0 6px;padding:16px;border:2px solid var(--ink);border-radius:6px;background:var(--surface)}
-.label .line{font-size:1.2rem;font-weight:700}
-.label .verify{margin-top:8px;color:var(--unsure);font-weight:600}
-.notes{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:.9rem}
+.label{margin:20px 0 6px;border:3px solid var(--ink);background:var(--surface);color:var(--ink)}
+.label .line{padding:14px 16px;font-size:clamp(1.4rem,5.4vw,2rem);line-height:1.2;font-weight:800;overflow-wrap:anywhere}
+.label .line .k{text-transform:uppercase;letter-spacing:.02em}
+.label .verify{padding:10px 16px;border-top:1.5px solid var(--ink);font-size:1rem;font-weight:600;overflow-wrap:anywhere}
+.label .verify .k{text-transform:uppercase;font-size:.85rem;letter-spacing:.04em;margin-right:4px}
+.label .notes{margin:0;padding:8px 16px 10px 32px;border-top:1px dotted var(--ink);color:var(--muted);font-size:.85rem;font-weight:400}
 .ocr{margin:12px 0;font-size:.9rem;color:var(--muted)}
 .ocr textarea{min-height:70px;margin-top:4px}
-table{width:100%;border-collapse:collapse;margin-top:14px}
-td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top}
-td.n{font-weight:600;white-space:nowrap;width:1%}
-.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.85rem;font-weight:700;white-space:nowrap}
-.pill.contains{background:var(--contains-bg);color:var(--contains);border:1.5px solid var(--contains)}
-.pill.absent{background:var(--absent-bg);color:var(--absent);border:1.5px solid transparent;font-weight:600}
-.pill.unsure{background:var(--unsure-bg);color:var(--unsure);border:2px dashed var(--unsure-line)}
-.chip{display:inline-block;margin:2px 4px 2px 0;padding:1px 8px;border-radius:6px;font-size:.85rem;background:var(--absent-bg);border:1px solid var(--line)}
-.chip.rules{border-color:var(--contains)}
-.chip.model{font-style:italic}
-.chip small{color:var(--muted);margin-left:4px}
+.a{margin-top:12px;padding:10px 12px;border:2px solid var(--ink);border-left-width:8px}
+.a.unsure{border:2px dashed var(--unsure-line);border-left:8px dashed var(--unsure-line);background:var(--unsure-bg)}
+.a .hd{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px}
+.a .nm{font-weight:700;font-size:1.05rem}
+.badge{display:inline-block;padding:1px 10px;border-radius:4px;font-size:.78rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.badge.contains{background:var(--solid-bg);color:var(--solid-ink)}
+.badge.unsure{background:transparent;color:var(--unsure);border:2px dashed var(--unsure-line)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:baseline;gap:7px;max-width:100%;padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:.92rem;font-weight:400;overflow-wrap:anywhere}
+.chip .w{font-weight:400}
+.chip .tag{font-size:.7rem;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.chip.infer{font-style:italic}
+.lead{align-self:center;font-size:.85rem;color:var(--muted)}
+.absent{margin:16px 2px 0;color:var(--muted);font-size:.95rem}
+.absent b{font-weight:700}
+@media (max-width:480px){button,label.btn{flex:1 1 100%;text-align:center}}
 .disclaimer{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:2px solid var(--ink);padding:10px 16px;font-size:.85rem;z-index:5}
 .disclaimer div{max-width:760px;margin:0 auto}
 .foot{color:var(--muted);font-size:.8rem;margin-top:16px}
@@ -86,18 +96,34 @@ td.n{font-weight:600;white-space:nowrap;width:1%}
 <script>
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-const STATUS = { contains: "✔ Contains", absent: "— Absent", unsure: "? Unsure" };
+const STATUS = { contains: "✔ Contains", unsure: "? Unsure" };
+
+function chip(word, tag, cls) {
+  const c = el("span", "chip" + (cls ? " " + cls : ""));
+  c.appendChild(el("span", "w", word));
+  if (tag) c.appendChild(el("span", "tag", tag));
+  return c;
+}
 
 function chips(a) {
-  const box = el("div");
+  const box = el("div", "chips");
   if (a.status === "contains") {
-    a.evidence.forEach(w => { const c = el("span", "chip rules", w); c.appendChild(el("small", null, "rules")); box.appendChild(c); });
-    if (a.layers.includes("model") && a.evidence.length) { const c = el("span", "chip model", "model agrees"); box.appendChild(c); }
-    if (a.model_inference_only) box.appendChild(el("span", "chip model", "model inference — no matched term"));
+    a.evidence.forEach(w => box.appendChild(chip(w, "rules")));
+    if (a.layers.includes("model") && a.evidence.length) box.appendChild(chip("agrees", "model"));
+    if (a.model_inference_only) box.appendChild(chip("model inference — no matched term", null, "infer"));
   } else if (a.status === "unsure") {
-    box.appendChild(el("span", "chip model", "unsure, because: " + a.unsure_because.join(", ") + " — source not named; confirm with supplier"));
+    box.appendChild(el("span", "lead", "unsure, because:"));
+    a.unsure_because.forEach(w => box.appendChild(chip(w, "source not named")));
   }
   return box;
+}
+
+// "Contains: Milk, Eggs." -> bold keyword + list
+function labelLine(text, cls) {
+  const d = el("div", cls), i = text.indexOf(":");
+  if (i > 0) { d.appendChild(el("span", "k", text.slice(0, i + 1))); d.appendChild(document.createTextNode(text.slice(i + 1))); }
+  else d.textContent = text;
+  return d;
 }
 
 function render(r) {
@@ -111,20 +137,21 @@ function render(r) {
     $("text").value = r.ocr_text;
   }
   const lab = el("div", "label");
-  lab.appendChild(el("div", "line", r.contains_line));
-  if (r.verify_line) lab.appendChild(el("div", "verify", r.verify_line));
+  lab.appendChild(labelLine(r.contains_line, "line"));
+  if (r.verify_line) lab.appendChild(labelLine(r.verify_line, "verify"));
   if (r.notes.length) { const ul = el("ul", "notes"); r.notes.forEach(n => ul.appendChild(el("li", null, n))); lab.appendChild(ul); }
   out.appendChild(lab);
   if (r.truncated) out.appendChild(el("p", "foot", "Input was long; only the first 6,000 characters were checked."));
-  const tb = el("table");
-  r.allergens.forEach(a => {
-    const tr = el("tr");
-    tr.appendChild(el("td", "n", a.name));
-    const s = el("td"); s.appendChild(el("span", "pill " + a.status, STATUS[a.status])); tr.appendChild(s);
-    const e = el("td"); e.appendChild(chips(a)); tr.appendChild(e);
-    tb.appendChild(tr);
+  r.allergens.filter(a => a.status !== "absent").forEach(a => {
+    const row = el("div", "a " + a.status);
+    const hd = el("div", "hd");
+    hd.appendChild(el("span", "nm", a.name));
+    hd.appendChild(el("span", "badge " + a.status, STATUS[a.status]));
+    row.appendChild(hd); row.appendChild(chips(a));
+    out.appendChild(row);
   });
-  out.appendChild(tb);
+  const absent = r.allergens.filter(a => a.status === "absent").map(a => a.name);
+  if (absent.length) { const p = el("p", "absent"); p.appendChild(el("b", null, "Absent:")); p.appendChild(document.createTextNode(" " + absent.join(", ") + ".")); out.appendChild(p); }
   $("foot").textContent = r.sampler === "rules_only" ? "Layers used: rules only." : "Layers used: fine-tuned model (" + r.sampler + ") + rules.";
 }
 
