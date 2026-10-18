@@ -563,3 +563,40 @@ false alarms: [('trap-040', 'wheat'), ('trap-052', 'wheat'), ('trap-056', 'wheat
 confident misses (id, allergen): [('trap-002', 'milk'), ('trap-002', 'tree_nuts'), ('trap-004', 'fish'), ('trap-007', 'fish'), ('trap-008', 'milk'), ('trap-011', 'wheat'), ('trap-018', 'milk'), ('trap-018', 'tree_nuts'), ('trap-023', 'wheat'), ('trap-023', 'soy'), ('trap-024', 'wheat'), ('trap-026', 'tree_nuts'), ('trap-027', 'crustacean_shellfish'), ('trap-027', 'wheat'), ('trap-030', 'milk'), ('trap-034', 'wheat'), ('trap-038', 'wheat'), ('trap-045', 'wheat'), ('trap-048', 'soy')]
 abstained on gold positives: []
 false alarms: [('trap-007', 'sesame'), ('trap-018', 'sesame'), ('trap-019', 'sesame'), ('trap-025', 'egg')]
+
+
+### FROZEN TRAPS — ABLATION: LoRA only (2026-10-18; ran AFTER the main scoring; frozen traps now CLOSED)
+- Command: `uv run python -I scripts/score_frozen_lora_only.py` (62 single sampler calls; same prompt/parser as `score_m3.py`; raw model verdicts: no rules_product, no unsure-downgrade). Ran after the main scoring with **no intervening changes**: HEAD 4df9f8b, traps sha256 e62378cc, `rules.py` sha256 7b966af7daf1 (unchanged), working tree clean apart from the new script. Nothing tuned. The traps are not scored again by any system.
+- Per-layer contribution on the 62 frozen rows (85 gold positives; caught / CONFIDENT MISS / abstained / false alarms):
+
+| system | caught | CONFIDENT MISS | abstained | false alarms | abstained on gold negatives |
+|---|---|---|---|---|---|
+| rules_naive (baseline) | 48 | 37 | 0 | 4 | 0 |
+| Qwen zero-shot | 66 | 19 | 0 | 4 | 0 |
+| **LoRA only** | 56 (0.66) | 16 (0.19) | 13 (0.15) | 0 | 16 |
+| **Shipped LoRA + rules_product** | 73 (0.86) | 11 (0.13) | 1 | 0 | 5 |
+
+- Reading: adding rules_product to the LoRA turns 17 gold positives the LoRA did not catch into catches (56 -> 73). The LoRA alone is NOT better than Qwen zero-shot on recall (56 vs 66) here; its distinguishing behaviour is 0 false alarms plus abstention (13 on gold positives, 16 on gold negatives).
+- **Cost of the no-trigger downgrade:** of the shipped config's 11 confident misses, 5 were LoRA-only ABSTENTIONS that the pipeline's "unsure needs an unnamed-source term" rule downgraded to absent: trap-002 milk and trap-018 milk (pesto), trap-007 wheat (caesar/croutons), trap-013 egg (tempura batter), trap-026 egg (frangipane). The downgrade rule reduced noisy unsure verdicts but converted those abstentions into confident "no" on real allergens. Recorded as a finding; not patched.
+- LoRA-only tables (abstentions kept separate from misses):
+
+**4. LoRA ONLY (no rules; unparseable 0)** (n=62 rows, 85 gold positives)
+
+| allergen | gold+ | caught | CONFIDENT MISS (said no) | abstained | false alarms | abstained on neg |
+|---|---|---|---|---|---|---|
+| milk | 19 | 16 | 0 | 3 | 0 | 3 |
+| egg | 9 | 7 | 0 | 2 | 0 | 3 |
+| fish | 8 | 4 | 3 | 1 | 0 | 0 |
+| crustacean_shellfish | 4 | 3 | 1 | 0 | 0 | 0 |
+| tree_nuts | 8 | 6 | 2 | 0 | 0 | 0 |
+| peanuts | 1 | 1 | 0 | 0 | 0 | 0 |
+| wheat | 21 | 8 | 10 | 3 | 0 | 1 |
+| soy | 8 | 4 | 0 | 4 | 0 | 8 |
+| sesame | 7 | 7 | 0 | 0 | 0 | 1 |
+| **all** | 85 | 56 (0.66) | **16** (0.19) | 13 (0.15) | 0 | 16 |
+
+confident misses (id, allergen): [('trap-001', 'fish'), ('trap-002', 'tree_nuts'), ('trap-004', 'fish'), ('trap-007', 'fish'), ('trap-018', 'tree_nuts'), ('trap-022', 'wheat'), ('trap-023', 'wheat'), ('trap-025', 'wheat'), ('trap-026', 'wheat'), ('trap-027', 'crustacean_shellfish'), ('trap-027', 'wheat'), ('trap-030', 'wheat'), ('trap-034', 'wheat'), ('trap-038', 'wheat'), ('trap-041', 'wheat'), ('trap-045', 'wheat')]
+abstained on gold positives: [('trap-002', 'milk'), ('trap-003', 'milk'), ('trap-007', 'wheat'), ('trap-013', 'egg'), ('trap-013', 'wheat'), ('trap-018', 'milk'), ('trap-023', 'soy'), ('trap-024', 'wheat'), ('trap-024', 'soy'), ('trap-026', 'egg'), ('trap-044', 'fish'), ('trap-044', 'soy'), ('trap-048', 'soy')]
+false alarms: []
+
+tokens in 13,355 out 2,976
