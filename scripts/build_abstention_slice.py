@@ -27,7 +27,7 @@ SEED = 4242
 ABSTAIN = {
     "lecithin": (["lecithin", "emulsifier (lecithin)", "lecithin (emulsifier)"], ["soy"], 60, r"soy|lecithin|sunflower"),
     "natural_flavoring": (["natural flavoring", "natural flavor", "natural flavours", "artificial flavor", "flavouring"],
-                          ["milk", "soy", "wheat"], 80, r"flavo|extract|vanilla"),
+                          ["milk"], 30, r"flavo|extract|vanilla"),
     "unspecified_oil": (["vegetable oil", "cooking oil", "vegetable oil (may vary)", "refined oil", "edible oil"],
                         ["soy", "peanuts"], 70, r"oil|soy|peanut|fat|shortening"),
     "vanaspati": (["vanaspati", "banaspati (hydrogenated vegetable fat)", "banaspati", "vegetable ghee"],
